@@ -9,41 +9,47 @@ import { NeonService } from 'src/services/neon/neon.service';
 import { NotificationService } from 'src/services/notification/notification.service';
 import { SMSService } from 'src/services/sms/sms.service';
 import { ExpoPushMessage } from 'expo-server-sdk';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 @Controller('hq/mark-donated')
 export class MarkDonatedController {
   constructor(
     private readonly neonService: NeonService,
     private readonly notificationService: NotificationService,
     private readonly smsService: SMSService,
+    private readonly hqAuthService: HqAuthService,
   ) {}
 
   @Post()
-  async markDonated(@Body() request: { token: string; uuid: string }) {
-    let { token, uuid } = request;
-    let envCode = process.env.HQ_TOKEN;
-    if (token === `hq-${envCode}`) {
+  async markDonated(
+    @Body() request: { bankCode: string; token: string; uuid: string },
+  ) {
+    let { bankCode, token, uuid } = request;
+    let auth = await this.hqAuthService.authenticate(bankCode, token);
+    if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT name,phone,totaldonated,notification,bloodtype FROM users WHERE uuid = '${uuid}';`,
+        `SELECT name,phone,totaldonated,notification,bloodtype FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
       );
       if (donor.length === 0) {
-        return { error: true, message: 'Donor not found' };
+        return { error: true, message: 'Donor is out of your scope or does not exist.' };
       } else {
         const now = new Date();
+        let getLog = await this.neonService.query(
+          `SELECT log FROM users WHERE uuid = '${uuid}';`,
+        );
+        let log = getLog[0].log;
+        log.push({ x: `d-${donor[0].bloodtype}`, y: now.toISOString() });
         let updatedLog = await this.neonService.query(
-          `UPDATE users SET log = log || '${JSON.stringify({
-            x: `d-${donor[0].bloodtype}`,
-            y: now.toISOString(),
-          })}'::jsonb WHERE uuid = '${uuid}';`,
+          `UPDATE users SET log = '${JSON.stringify(log)}' WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
         );
         //update last donated
         let updatedDonor = await this.neonService.query(
-          `UPDATE users SET lastdonated = '${now.toISOString()}' WHERE uuid = '${uuid}';`,
+          `UPDATE users SET lastdonated = '${now.toISOString()}' WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
         );
         //add to total donated
         let newTotal = donor[0].totaldonated + 1;
         let updatedTotal = await this.neonService.query(
-          `UPDATE users SET totaldonated = ${newTotal} WHERE uuid = '${uuid}';`,
+          `UPDATE users SET totaldonated = ${newTotal} WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
         );
         //notification
         let messages: ExpoPushMessage[] = [];
@@ -68,11 +74,10 @@ export class MarkDonatedController {
         }
         messages.push({
           to: pushToken,
-          subtitle: `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
+          title: `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
           body: '',
-          interruptionLevel: 'critical',
           sound: {
-            critical: true,
+            critical: false,
             volume: 1,
           },
         });

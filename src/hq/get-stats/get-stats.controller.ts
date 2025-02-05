@@ -1,35 +1,37 @@
 import { Body, Controller, HttpCode, HttpException, HttpStatus, Post } from '@nestjs/common';
 import { NeonService } from 'src/services/neon/neon.service';
 import { request } from 'http';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 
 @Controller('hq/get-stats')
 export class GetStatsController {
   constructor(
     private readonly neonService: NeonService,
+    private readonly hqAuthService: HqAuthService,
   ) {}
 
   @Post()
-  async getStats(@Body() request: { loginCode: string }) {
-    let { loginCode } = request;
-    let envCode = process.env.HQ_TOKEN;
-    if (loginCode === `hq-${envCode}`) {
+  async getStats(@Body() request: { bankCode: string, loginCode: string }) {
+    let { bankCode, loginCode } = request;
+    let auth = await this.hqAuthService.authenticate(bankCode, loginCode);
+    if (auth.error === false) {
       /**
        * return:
        * totaldonors:
        * totaldonated:
        */
       let totalDonators = await this.neonService.query(
-        `SELECT verified FROM users;`,
+        `SELECT verified FROM users WHERE scope LIKE '%"${bankCode}"%';`,
       );
       let totalDonated = await this.neonService.query(
-        `SELECT SUM(totaldonated) FROM users;`,
+        `SELECT SUM(totaldonated) FROM users WHERE scope LIKE '%"${bankCode}"%';`,
       );
       return {
         error: false,
         message: 'Login successful',
         data: {
           totalDonors: totalDonators,
-          totalDonated: totalDonated[0].sum,
+          totalDonated: totalDonated[0]['SUM(totaldonated)'],
         },
       };
     } else {

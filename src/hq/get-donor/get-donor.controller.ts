@@ -5,23 +5,27 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 import { NeonService } from 'src/services/neon/neon.service';
 
 @Controller('hq/get-donor')
 export class GetDonorController {
-  constructor(private readonly neonService: NeonService) {}
+  constructor(private readonly neonService: NeonService,
+    private readonly hqAuthService: HqAuthService
+  ) {}
 
   @Post()
-  async getDonor(@Body() request: { token: string; uuid: string }) {
-    let { token, uuid } = request;
-    let envCode = process.env.HQ_TOKEN;
-    if (token === `hq-${envCode}`) {
+  async getDonor(@Body() request: { bankCode: string, token: string; uuid: string }) {
+    let { bankCode, token, uuid } = request;
+    let auth = await this.hqAuthService.authenticate(bankCode, token);
+    if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT name,phone,bloodtype,lastdonated,totaldonated,dob,verified FROM users WHERE uuid = '${uuid}';`,
+        `SELECT name,phone,bloodtype,lastdonated,totaldonated,dob,verified FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
       );
+      console.log(donor)
       if (donor.length === 0) {
-        return { error: true, message: 'Donor not found' };
+        return { error: true, message: 'Donor is out of your scope or does not exist' };
       } else {
         return {
           error: false,

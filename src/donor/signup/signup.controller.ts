@@ -18,8 +18,6 @@ export class SignupController {
       lookupid: string;
       dob: string;
       birthdayhero: boolean;
-      affiliated: boolean;
-      affiliatedata: any;
       distance: number;
       sex: string;
       medications: string;
@@ -40,8 +38,6 @@ export class SignupController {
 2	  verified	boolean [DONE]
 3	  log	ARRAY [DONE]
 4	  otp	integer [DONE]
-5	  affiliated	boolean
-6   affiliatedata	jsonb
 7	  dob	TIMESTAMPTZ [DONE]
 8	  distance	numeric
 9	  id integer [DONE]
@@ -62,7 +58,7 @@ export class SignupController {
 24  installed BOOLEAN
 );
  */
-      let prompt = `INSERT INTO users (name, phone, uuid, bloodtype, lastdonated, sms, totaldonated, weight, height, dob, verified, otp, birthdayhero, affiliated, affiliatedata, distance, sex, medications, conditions, installed, coords, scope) VALUES ('${
+      let prompt = `INSERT INTO users (name, phone, uuid, bloodtype, lastdonated, sms, totaldonated, weight, height, dob, verified, otp, birthdayhero, distance, sex, medications, conditions, installed, coords, log, scope) VALUES ('${
         request.name
       }' , '${request.phonenumber
         .toString()
@@ -71,13 +67,11 @@ export class SignupController {
         request.bloodtype
       }', NULL, true, ${0}, ${parseInt(request.weight)}, ${parseInt(
         request.height,
-      )}, '${request.dob}', false, null, ${request.birthdayhero}, ${
-        request.affiliated
-      }, '${JSON.stringify(request.affiliatedata)}', ${request.distance}, '${
+      )}, '${request.dob}', 0, null, ${request.birthdayhero}, ${request.distance}, '${
         request.sex
       }', '${request.medications}', '${request.conditions}', true, '${
         request.coords
-      }', '{"${request.scope}"}') returning name,phone,uuid;`;
+      }', '[]', '["${request.scope}"]') returning name,phone,uuid;`;
       console.log(prompt);
 
       let insertUser = await this.neonService.query(prompt);

@@ -5,11 +5,15 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 import { NeonService } from 'src/services/neon/neon.service';
 
 @Controller('hq/query-donor')
 export class QueryDonorController {
-  constructor(private readonly neonService: NeonService) {}
+  constructor(
+    private readonly neonService: NeonService,
+    private readonly hqAuthService: HqAuthService,
+  ) {}
   /**
    * @params {string} token
    * @params {number} months
@@ -24,23 +28,23 @@ export class QueryDonorController {
   async queryDonor(
     @Body()
     request: {
+      bankCode: string;
       token: string;
       months: number;
       verified: boolean;
       bloodtype: string;
       distance: number;
-      affiliated: boolean;
       unverified: boolean;
       name: string;
     },
   ) {
-    let { token, months, verified, bloodtype, distance, affiliated, name } =
+    let { bankCode, token, months, verified, bloodtype, distance, name } =
       request;
-    let envCode = process.env.HQ_TOKEN;
     let initialTimestamp = new Date();
-    if (token === `hq-${envCode}`) {
+    let auth = await this.hqAuthService.authenticate(bankCode, token);
+    if (auth.error === false) {
       if (request.unverified === true) {
-        let queryString = `SELECT name,uuid,verified,bloodtype,distance,affiliated,phone,lastdonated,totaldonated,dob,sex FROM users where verified=false`;
+        let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users where verified=0`;
         let users = await this.neonService.query(queryString);
         let finalTimestamp = new Date();
         let elapsed = finalTimestamp.getTime() - initialTimestamp.getTime();
@@ -50,13 +54,13 @@ export class QueryDonorController {
         };
       }
       let whereHasBeenUsed = false;
-      let queryString = `SELECT name,uuid,verified,bloodtype,distance,affiliated,phone,lastdonated,totaldonated,dob,sex FROM users ${
-        verified == true ? 'WHERE verified = true' : ''
-      } ${
+      let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users ${
+        verified == true ? 'WHERE verified = 1 ' : ''
+      }`; /*${
         affiliated
           ? `${verified === true ? 'AND' : 'WHERE'} affiliated = true`
           : ''
-      }`;
+      }`;*/
       if (months != null) {
         let date = new Date();
         date.setMonth(date.getMonth() - months);
@@ -91,13 +95,15 @@ export class QueryDonorController {
       if (name?.trim() !== '') {
         queryString += ` ${
           verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
-        } name ILIKE '%${name}%' OR phone ILIKE '%${name}%'`;
+        } name LIKE '%${name}%' COLLATE NOCASE OR phone LIKE '%${name}%' COLLATE NOCASE`;
 
         if (verified === false) {
           whereHasBeenUsed = true;
         }
       }
-      queryString += ` ORDER BY distance ASC`;
+      queryString += ` ${
+        verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
+      } scope LIKE '%"${bankCode}%"' ORDER BY distance ASC;`;
       console.log(queryString);
 
       let users = await this.neonService.query(queryString);

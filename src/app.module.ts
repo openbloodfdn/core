@@ -26,11 +26,13 @@ import { GeocodeLocationModule } from './donor/geocode-location/geocode-location
 import { RequestBloodModule } from './hq/request-blood/request-blood.module';
 import { BirthdayModule } from './donor/birthday/birthday.module';
 import { BanksModule } from './donor/banks/banks.module';
+import { CreateBankModule } from './hq/create-bank/create-bank.module';
+import { HqAuthService } from './services/hq-auth/hq-auth.service';
 
 
 @Module({
   imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule],
   controllers: [AppController],
-  providers: [AppService, DBService, OTPService, TimestampService, NeonService, SMSService, NotificationService],
+  providers: [AppService, DBService, OTPService, TimestampService, NeonService, SMSService, NotificationService, HqAuthService],
 })
 export class AppModule {}

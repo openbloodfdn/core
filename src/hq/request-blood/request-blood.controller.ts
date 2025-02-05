@@ -9,6 +9,7 @@ import { NeonService } from 'src/services/neon/neon.service';
 import { NotificationService } from 'src/services/notification/notification.service';
 import { SMSService } from 'src/services/sms/sms.service';
 import { ExpoPushMessage } from 'expo-server-sdk';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 
 @Controller('hq/request-blood')
 export class RequestBloodController {
@@ -16,12 +17,14 @@ export class RequestBloodController {
     private readonly neonService: NeonService,
     private readonly notificationService: NotificationService,
     private readonly smsService: SMSService,
+    private readonly hqAuthService: HqAuthService,
   ) {}
 
   @Post()
   async requestBlood(
     @Body()
     request: {
+      bankCode: string;
       type: string;
       token: string;
       units: number;
@@ -29,14 +32,14 @@ export class RequestBloodController {
       contact: string;
     },
   ) {
-    let { type, token, units, months, contact } = request;
-    let envCode = process.env.HQ_TOKEN;
+    let { bankCode, type, token, units, months, contact } = request;
 
     //check if units and months are numbers
     /*if (isNaN(units) || isNaN(months)) {
     return Response.json({ error: true, message: "Invalid number of units or months." })
   }*/
-    if (token === `hq-${envCode}`) {
+    let auth = await this.hqAuthService.authenticate(bankCode, token);
+    if (auth.error === false) {
       let now = new Date();
       //get time 3 months ago as a date object
       let minimumDate = new Date(
@@ -45,7 +48,7 @@ export class RequestBloodController {
         now.getDate(),
       );
       console.log(minimumDate);
-      let prompt = `SELECT name,notification,phone FROM users WHERE bloodtype = '${type}' ${
+      let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
         months > 0
           ? `AND (lastdonated < '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
           : ''
@@ -54,7 +57,7 @@ export class RequestBloodController {
       let donors = await this.neonService.query(prompt);
       console.log(donors);
       if (donors.length === 0) {
-        return { error: true, message: 'No donors found.' };
+        return { error: true, message: 'No donors found in your scope.' };
       } else {
         let messages: ExpoPushMessage[] = [];
         let sent = 0;
@@ -82,7 +85,7 @@ export class RequestBloodController {
           }
           messages.push({
             to: pushToken,
-            subtitle: `Blood Center requires ${units} unit${
+            title: `Blood Center requires ${units} unit${
               units == 1 ? '' : 's'
             } of ${type} blood.`,
             body: 'Please donate if you can. Click to call.',

@@ -33,7 +33,7 @@ export class BirthdayController {
             name: 'default',
             volume: 1,
           },
-          subtitle: `Happy Birthday, ${name.split(' ')[0]}!`,
+          title: `Happy Birthday, ${name.split(' ')[0]}!`,
           body: `Celebrate your special day by donating blood!`,
         });
       } else {

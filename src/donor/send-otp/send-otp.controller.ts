@@ -12,7 +12,7 @@ export class SendOtpController {
    */
   constructor(
     private readonly otpService: OTPService,
-    private neonService: NeonService
+    private readonly neonService: NeonService
   ) {}
   @Post()
   async sendOTP(

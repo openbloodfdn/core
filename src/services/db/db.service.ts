@@ -83,16 +83,6 @@ export class DBService {
       convert: (val: string) => parseInt(val),
       default: null,
     },
-    //TODO: remove these two
-    affiliated: {
-      convert: (val: string) => val == 'true',
-      default: false,
-    },
-    affiliatedata: {
-      convert: (val: string) => val,
-      default: '',
-    },
-
     sex: {
       convert: (val: string) => val,
       default: '',
@@ -128,11 +118,14 @@ export class DBService {
   };
 
   fix(obj: any) {
-    const result: any = {};
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(this.converters, key)) {
-        const { convert, default: defaultValue } = this.converters[key];
-        result[key] = obj[key] !== undefined ? convert(obj[key]) : defaultValue;
+    const result = { ...obj };
+
+    // For every key defined in the converters, override the value
+    // with a converted value or a default if it's missing.
+    for (const key in result) {
+      if (key in this.converters) {
+        const converter = this.converters[key];
+        result[key] = converter.convert(result[key] || converter.default);
       }
     }
     return result;

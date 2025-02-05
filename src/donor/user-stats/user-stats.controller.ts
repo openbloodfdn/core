@@ -6,9 +6,9 @@ import { NeonService } from 'src/services/neon/neon.service';
 @Controller('donor/user-stats')
 export class UserStatsController {
   constructor(
-    private dbService: DBService,
-    private timestampService: TimestampService,
-    private neonService: NeonService,
+    private readonly dbService: DBService,
+    private readonly timestampService: TimestampService,
+    private readonly neonService: NeonService,
   ) {}
 
   @Post()
@@ -18,24 +18,30 @@ export class UserStatsController {
       return { error: true, message: 'User not found' };
     } else {
       let getUserFromToken = await this.neonService.query(
-        `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords FROM users WHERE uuid='${token}';`,
+        `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords,scope FROM users WHERE uuid='${token}';`,
+      );
+      let getbankdata = await this.neonService.query(
+        `SELECT name,phone FROM banks WHERE uuid='${getUserFromToken[0].scope[0]}';`,
       );
       if (getUserFromToken.length > 0) {
         //get total donators
-        let totalDonators = await this.neonService.query(
-          `select count(*) from users where verified='true'`,
+        let totalDonators = await this.dbService.query(
+          `SELECT COUNT(*) FROM users WHERE scope LIKE '%"${getUserFromToken[0].scope[0]}"%';`,
         );
-        console.log(getUserFromToken[0]);
         return {
           error: false,
           message: 'User found',
           data: {
             name: getUserFromToken[0].name,
+            bank: {
+              name: getbankdata[0].name,
+              phone: getbankdata[0].phone,
+            },
             donated: getUserFromToken[0].totaldonated,
             lastDonated: this.timestampService.toShortString(
               getUserFromToken[0].lastdonated?.toString(),
             ),
-            totalDonators: totalDonators[0].count,
+            totalDonators: totalDonators[0]['COUNT(*)'],
             donatingSince: this.timestampService.toShortString(
               getUserFromToken[0].created_on?.toString(),
             ),
