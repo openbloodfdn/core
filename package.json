@@ -19,8 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
-  "engines" : { 
-    "node" : ">=20"
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",
@@ -32,6 +32,8 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-fastify": "^11.0.7",
+    "@nestjs/platform-socket.io": "^11.0.9",
+    "@nestjs/websockets": "^11.0.9",
     "@prisma/adapter-libsql": "^6.3.0",
     "@prisma/client": "^6.3.0",
     "bcrypt": "^5.1.1",

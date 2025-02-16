@@ -1,6 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
+import { SMSService } from 'src/services/sms/sms.service';
 
 @Controller('donor/send-otp')
 export class SendOtpController {
@@ -11,8 +12,8 @@ export class SendOtpController {
    * @params {string} userEnteredOTP
    */
   constructor(
-    private readonly otpService: OTPService,
-    private readonly neonService: NeonService
+    private readonly neonService: NeonService,
+    private readonly smsService: SMSService,
   ) {}
   @Post()
   async sendOTP(
@@ -53,8 +54,12 @@ export class SendOtpController {
       if (checkIFUserExists.length === 0) {
         if (allowSignup) {
           let otp = Math.floor(1000 + Math.random() * 9000);
-          let sendOTPRecord = await this.otpService
-            .send(phone, otp)
+          let sendOTPRecord = await this.smsService
+            .send(
+              phone,
+              `
+            Your Open Blood OTP is ${otp}`,
+            )
             .catch((err) => {
               return {
                 error: true,
@@ -75,8 +80,12 @@ export class SendOtpController {
         if (phone === '1234567890') {
           otp = 1234;
         } else {
-          let sendOTPRecord = await this.otpService
-            .send(phone, otp)
+          let sendOTPRecord = await this.smsService
+            .send(
+              phone,
+              `
+            Your Open Blood OTP is ${otp}`,
+            )
             .catch((err) => {
               return {
                 error: true,

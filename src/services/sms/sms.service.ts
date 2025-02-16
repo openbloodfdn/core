@@ -20,6 +20,8 @@ export class SMSService {
       from: process.env.TWILIO_PHONE,
       to: `+91${phone}`,
     });
+    console.log(`SMS sent to ${phone}`);
+    console.log(response);
     return response;
   }
 }

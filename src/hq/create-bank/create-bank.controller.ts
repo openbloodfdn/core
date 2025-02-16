@@ -14,12 +14,12 @@ export class CreateBankController {
 
   @Get()
   async createBank() {
-    const secret = '';
-    const bankName = '';
-    const bankPhone = '';
-    const bankID = '';
-    const bankCoords = '';
-    const bankRegion = '';
+    const secret = 'testbank';
+    const bankName = 'staging';
+    const bankPhone = '9123456789';
+    const bankID = 'staging';
+    const bankCoords = '11.953852,79.797765';
+    const bankRegion = 'Pondicherry, India';
 
     interface BankDetails {
       secret: string;

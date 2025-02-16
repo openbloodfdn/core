@@ -103,7 +103,7 @@ export class QueryDonorController {
       }
       queryString += ` ${
         verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
-      } scope LIKE '%"${bankCode}%"' ORDER BY distance ASC;`;
+      } scope LIKE '%"${bankCode}"%' ORDER BY distance ASC;`;
       console.log(queryString);
 
       let users = await this.neonService.query(queryString);

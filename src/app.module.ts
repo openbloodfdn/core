@@ -31,7 +31,7 @@ import { HqAuthService } from './services/hq-auth/hq-auth.service';
 
 
 @Module({
-  imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule],
+  imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule, CreateBankModule],
   controllers: [AppController],
   providers: [AppService, DBService, OTPService, TimestampService, NeonService, SMSService, NotificationService, HqAuthService],
 })

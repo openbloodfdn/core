@@ -131,10 +131,13 @@ export class DBService {
     return result;
   }
   async query(query: string) {
+    console.log(`DEBUG: ${query}`);
     if (query.split(';').length > 2) {
       return { error: true, message: 'Only one query is allowed' };
     } else {
-      const result = await this.db.execute(query);
+      const result = await this.db.execute(query).catch((e) => {
+        console.error(e);
+      });
       result.rows.forEach((element: any, index: number) => {
         result.rows[index] = this.fix(element);
       });
