@@ -15,8 +15,8 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return "Open Blood Internal API"', () => {
+      expect(appController.getHello()).toBe('Open Blood Internal API');
     });
   });
 });

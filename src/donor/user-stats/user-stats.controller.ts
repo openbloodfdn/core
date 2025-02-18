@@ -6,7 +6,6 @@ import { NeonService } from 'src/services/neon/neon.service';
 @Controller('donor/user-stats')
 export class UserStatsController {
   constructor(
-    private readonly dbService: DBService,
     private readonly timestampService: TimestampService,
     private readonly neonService: NeonService,
   ) {}
@@ -25,7 +24,7 @@ export class UserStatsController {
       );
       if (getUserFromToken.length > 0) {
         //get total donators
-        let totalDonators = await this.dbService.query(
+        let totalDonators = await this.neonService.query(
           `SELECT COUNT(*) FROM users WHERE scope LIKE '%"${getUserFromToken[0].scope[0]}"%';`,
         );
         return {

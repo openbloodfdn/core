@@ -21,16 +21,18 @@ export class GetDonorController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT name,phone,bloodtype,lastdonated,totaldonated,dob,verified FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT name,phone,bloodtype,scope,lastdonated,totaldonated,dob,verified FROM users WHERE uuid = '${uuid}';`// AND scope LIKE '%"${bankCode}"%';`,
       );
       console.log(donor)
+      let isOOS = !donor[0].scope.includes(bankCode);
+      console.log(donor[0].scope, isOOS)
       if (donor.length === 0) {
-        return { error: true, message: 'Donor is out of your scope or does not exist' };
+        return { error: true, message: 'Donor does not exist' };
       } else {
         return {
           error: false,
           message: 'Donor found',
-          data: donor[0],
+          data: {...donor[0], oos: isOOS},
         };
       }
     } else {

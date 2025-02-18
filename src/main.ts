@@ -55,7 +55,7 @@ async function bootstrap() {
           let auth = await hqAuthService.authenticate(bankCode, token);
           console.log('Auth:', auth);
           if (auth.error === false) {
-            ws.send(`%ckpt%1%true`);
+            ws.send(`%ckpt%0%true`);
             let now = new Date();
             //get time 3 months ago as a date object
             let minimumDate = new Date(
@@ -66,13 +66,20 @@ async function bootstrap() {
             console.log(minimumDate);
             let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
               months > 0
-                ? `AND (lastdonated < '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
+                ? `AND (lastdonated <= '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
                 : ''
             };`;
+            //let prompt = `SELECT name,notification,phone FROM users WHERE phone='123456' OR phone='9500499912'`
             console.log(prompt);
             let donors = await neonService.query(prompt);
+
+            ws.send(
+              `%ckpt%1%${JSON.stringify({
+                x: prompt.length,
+              })}`,
+            );
             let bankName = await neonService.query(
-              `SELECT name FROM banks WHERE code = '${bankCode}';`,
+              `SELECT name FROM banks WHERE uuid = '${bankCode}';`,
             );
             console.log(donors);
             if (donors.length === 0) {
@@ -87,7 +94,7 @@ async function bootstrap() {
                 if (
                   (await notificationService.isValidToken(pushToken)) === false
                 ) {
-                  console.warn(
+                  /*console.warn(
                     `${notificationobj.phone}: Push token is not valid. Falling back to SMS.`,
                   );
                   let sendSMS = await smsService
@@ -111,25 +118,28 @@ async function bootstrap() {
                       bounced = bounced + 1;
                       console.warn('Error pushing SMS: ', err);
                     });
-                  continue;
+                    */
+                  bounced = bounced + 1;
+                  //continue;
+                } else {
+                  messages.push({
+                    to: pushToken,
+                    title: `Blood Center requires ${units} unit${
+                      units == 1 ? '' : 's'
+                    } of ${type} blood.`,
+                    body: 'Please donate if you can. Click to call.',
+                    priority: 'high',
+                    data: {
+                      url: `tel:+91${contact}`,
+                    },
+                    sound: {
+                      critical: true,
+                      name: 'default',
+                      volume: 1,
+                    },
+                  });
+                  sentPush = sentPush + 1;
                 }
-                messages.push({
-                  to: pushToken,
-                  title: `Blood Center requires ${units} unit${
-                    units == 1 ? '' : 's'
-                  } of ${type} blood.`,
-                  body: 'Please donate if you can. Click to call.',
-                  priority: 'high',
-                  data: {
-                    url: `tel:+91${contact}`,
-                  },
-                  sound: {
-                    critical: true,
-                    name: 'default',
-                    volume: 1,
-                  },
-                });
-                sentPush = sentPush + 1;
               }
               let batchAndSend = await notificationService.batch(messages);
               ws.send(

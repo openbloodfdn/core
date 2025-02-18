@@ -5,13 +5,14 @@ import {
   HttpStatus,
   Post,
 } from '@nestjs/common';
+import { ExpoPushMessage } from 'expo-server-sdk';
+import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { NotificationService } from 'src/services/notification/notification.service';
 import { SMSService } from 'src/services/sms/sms.service';
-import { ExpoPushMessage } from 'expo-server-sdk';
-import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
-@Controller('hq/mark-donated')
-export class MarkDonatedController {
+
+@Controller('hq/extend-donor-scope')
+export class ExtendDonorScopeController {
   constructor(
     private readonly neonService: NeonService,
     private readonly notificationService: NotificationService,
@@ -20,37 +21,28 @@ export class MarkDonatedController {
   ) {}
 
   @Post()
-  async markDonated(
+  async extendDonorScope(
     @Body() request: { bankCode: string; token: string; uuid: string },
   ) {
     let { bankCode, token, uuid } = request;
     let auth = await this.hqAuthService.authenticate(bankCode, token);
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
+      let bankInfo = await this.neonService.query(
+        `SELECT name,region FROM banks WHERE uuid = '${bankCode}';`,
+      );
       let donor = await this.neonService.query(
-        `SELECT name,phone,totaldonated,notification,bloodtype,scope FROM users WHERE uuid = '${uuid}';` //AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT name,phone,totaldonated,notification,bloodtype,scope FROM users WHERE uuid = '${uuid}';`,
       );
       if (donor.length === 0) {
         return { error: true, message: 'Donor does not exist.' };
       } else {
-        const now = new Date();
-        let getLog = await this.neonService.query(
-          `SELECT log FROM users WHERE uuid = '${uuid}';`,
+        let newScope = donor[0].scope;
+        newScope.push(bankCode);
+        let updatedScope = await this.neonService.query(
+          `UPDATE users SET scope = '${JSON.stringify(newScope)}' WHERE uuid = '${uuid}';`,
         );
-        let log = getLog[0].log;
-        log.push({ x: `d-${donor[0].bloodtype}`, y: now.toISOString() });
-        let updatedLog = await this.neonService.query(
-          `UPDATE users SET log = '${JSON.stringify(log)}' WHERE uuid = '${uuid}';`//AND scope LIKE '%"${bankCode}"%';`,
-        );
-        //update last donated
-        let updatedDonor = await this.neonService.query(
-          `UPDATE users SET lastdonated = '${now.toISOString()}' WHERE uuid = '${uuid}';`// AND scope LIKE '%"${bankCode}"%';`,
-        );
-        //add to total donated
-        let newTotal = donor[0].totaldonated + 1;
-        let updatedTotal = await this.neonService.query(
-          `UPDATE users SET totaldonated = ${newTotal} WHERE uuid = '${uuid}';`// AND scope LIKE '%"${bankCode}"%';`,
-        );
+
         //notification
         let messages: ExpoPushMessage[] = [];
         let pushToken = donor[0].notification;
@@ -63,26 +55,28 @@ export class MarkDonatedController {
           let sms = await this.smsService
             .send(
               donor[0].phone,
-              `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
+              `Hi, ${donor[0].name.split(' ')[0]}. You've been added to the ${bankInfo[0].name} blood bank donorlist in ${bankInfo[0].region}.`,
             )
             .catch((e) => {
               console.error(
                 `Error sending SMS to ${donor[0].phone}: ${e.message}`,
               );
             });
-          return { error: false, message: 'Records updated' };
+          return { error: false, message: 'Records updated!' };
         }
         messages.push({
           to: pushToken,
-          title: `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
-          body: '',
+          title: `Welcome to ${
+            bankInfo[0].name
+          }, ${donor[0].name.split(' ')[0]}!`,
+          body: `You've been added to the ${bankInfo[0].name} blood bank donorlist in ${bankInfo[0].region}`,
           sound: {
             critical: false,
             volume: 1,
           },
         });
         let notification = await this.notificationService.batch(messages);
-        return { error: false, message: 'Records updated' };
+        return { error: false, message: 'Records updated!' };
       }
     } else {
       throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);

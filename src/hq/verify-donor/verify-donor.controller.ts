@@ -36,7 +36,9 @@ export class VerifyDonorController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT bloodtype,uuid,phone,notification FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT bloodtype,uuid,phone,notification FROM users WHERE uuid = '${uuid}'` 
+        //AND scope LIKE '%"${bankCode}"%';`,
+        //TODO: ^ questionable.
       );
       if (donor.length === 0) {
         return { error: true, message: 'Donor is out of your scope or does not exist' };
@@ -87,7 +89,7 @@ export class VerifyDonorController {
                 error: true,
                 message: 'Error sending verification notification',
               };
-            });
+            }); 
         } else {
           let send = await this.smsService
             .send(

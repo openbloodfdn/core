@@ -28,10 +28,14 @@ import { BirthdayModule } from './donor/birthday/birthday.module';
 import { BanksModule } from './donor/banks/banks.module';
 import { CreateBankModule } from './hq/create-bank/create-bank.module';
 import { HqAuthService } from './services/hq-auth/hq-auth.service';
+import { ExtendDonorScopeModule } from './hq/extend-donor-scope/extend-donor-scope.module';
+import { GetBanksModule } from './donor/get-banks/get-banks.module';
+import { RemoveBankModule } from './donor/remove-bank/remove-bank.module';
+import { AddBankModule } from './donor/add-bank/add-bank.module';
 
 
 @Module({
-  imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule, CreateBankModule],
+  imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule, CreateBankModule, ExtendDonorScopeModule, GetBanksModule, RemoveBankModule, AddBankModule],
   controllers: [AppController],
   providers: [AppService, DBService, OTPService, TimestampService, NeonService, SMSService, NotificationService, HqAuthService],
 })
