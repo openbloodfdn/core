@@ -28,7 +28,6 @@ export class SendOtpController {
     let { phone, allowSignup, intentVerifyOTPlogin, userEnteredOTP } = body;
     phone = phone.replace(/\s/g, '');
     phone = phone.replace('+91', '');
-
     if (intentVerifyOTPlogin) {
       let checkIFUserExists = await this.neonService.query(
         `SELECT phone,otp,uuid FROM users WHERE phone = '${phone}';`,
@@ -77,7 +76,10 @@ export class SendOtpController {
         console.log('User exists');
         console.log(phone);
         let otp = Math.floor(1000 + Math.random() * 9000);
-        if (phone === '1234567890') {
+        if (
+          process.env.inReview === 'true' &&
+          phone === process.env.reviewNumber
+        ) {
           otp = 1234;
         } else {
           let sendOTPRecord = await this.smsService
