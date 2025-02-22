@@ -11,17 +11,22 @@ export class UpdateNotificationsController {
   ) {
     let { uuid, notificationToken } = request;
     let donor = await this.neonService.query(
-      `SELECT * FROM users WHERE uuid = '${uuid}';`,
+      `SELECT notification FROM users WHERE uuid = '${uuid}';`,
     );
     if (donor.length === 0) {
       return { error: true, message: 'Donor not found' };
-    } else {
+    } else if (donor[0].notification != notificationToken) {
       await this.neonService.query(
         `UPDATE users SET notification= '${notificationToken}' WHERE uuid = '${uuid}';`,
       );
       return {
         error: false,
         message: 'Notifications are enabled!',
+      };
+    } else {
+      return {
+        error: false,
+        message: 'Notifications are already enabled.',
       };
     }
   }

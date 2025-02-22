@@ -11,8 +11,9 @@ export class UserStatsController {
   ) {}
 
   @Post()
-  async getUserStats(@Body() body: { token: string }) {
-    let { token } = body;
+  async getUserStats(@Body() body: { token: string, bank: string }) {
+    let { token, bank } = body;
+    console.log(token, bank);
     if (!token) {
       return { error: true, message: 'User not found' };
     } else {
@@ -20,12 +21,12 @@ export class UserStatsController {
         `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords,scope FROM users WHERE uuid='${token}';`,
       );
       let getbankdata = await this.neonService.query(
-        `SELECT name,phone FROM banks WHERE uuid='${getUserFromToken[0].scope[0]}';`,
+        `SELECT name,phone,uuid FROM banks WHERE uuid='${bank}';`,
       );
-      if (getUserFromToken.length > 0) {
+      if (getUserFromToken.length > 0 && getbankdata.length > 0) {
         //get total donators
         let totalDonators = await this.neonService.query(
-          `SELECT COUNT(*) FROM users WHERE scope LIKE '%"${getUserFromToken[0].scope[0]}"%';`,
+          `SELECT COUNT(*) FROM users WHERE scope LIKE '%"${bank}"%';`,
         );
         return {
           error: false,
@@ -34,6 +35,7 @@ export class UserStatsController {
             name: getUserFromToken[0].name,
             bank: {
               name: getbankdata[0].name,
+              id: getbankdata[0].uuid,
               phone: getbankdata[0].phone,
             },
             donated: getUserFromToken[0].totaldonated,
@@ -51,7 +53,7 @@ export class UserStatsController {
           },
         };
       } else {
-        return { error: true, message: 'User not found' };
+        return { error: true, message: 'User or bank not found' };
       }
     }
   }

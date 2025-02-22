@@ -30,7 +30,7 @@ export class SendOtpController {
     phone = phone.replace('+91', '');
     if (intentVerifyOTPlogin) {
       let checkIFUserExists = await this.neonService.query(
-        `SELECT phone,otp,uuid FROM users WHERE phone = '${phone}';`,
+        `SELECT phone,otp,uuid,scope FROM users WHERE phone = '${phone}';`,
       );
       if (checkIFUserExists.length === 0) {
         return { error: true, message: 'User not found' };
@@ -41,6 +41,9 @@ export class SendOtpController {
             error: false,
             message: 'OTP verified',
             uuid: checkIFUserExists[0].uuid,
+            bank: {
+              id: checkIFUserExists[0].scope[0]
+            }
           };
         } else {
           return { error: true, message: 'OTP incorrect' };
