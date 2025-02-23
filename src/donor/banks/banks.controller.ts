@@ -7,7 +7,7 @@ export class BanksController {
 
   @Get()
   async getBanks() {
-    let banks = await this.neonService.query(`SELECT * FROM banks;`);
+    let banks = await this.neonService.query(`SELECT name,phone,uuid,coords,region FROM banks;`);
     return { error: false, banks: banks };
   }
 }

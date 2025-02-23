@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "nest build",
+    "build": "nest build && yarn sentry:sourcemaps",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "sentry:sourcemaps": "sentry-cli sourcemaps inject --org openbloodfdn --project core dist/ && sentry-cli sourcemaps upload --org openbloodfdn --project core dist/"
   },
   "engines": {
     "node": ">=20"
@@ -36,6 +37,9 @@
     "@nestjs/websockets": "^11.0.9",
     "@prisma/adapter-libsql": "^6.3.0",
     "@prisma/client": "^6.3.0",
+    "@sentry/cli": "^2.42.1",
+    "@sentry/nestjs": "^9.1.0",
+    "@sentry/profiling-node": "^9.1.0",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.39.2",
     "expo-server-sdk": "^3.13.0",

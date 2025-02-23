@@ -1,3 +1,4 @@
+import "./instrument";
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -10,6 +11,7 @@ import { NeonService } from './services/neon/neon.service';
 import { NotificationService } from './services/notification/notification.service';
 import { SMSService } from './services/sms/sms.service';
 import { HqAuthService } from './services/hq-auth/hq-auth.service';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,

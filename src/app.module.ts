@@ -31,12 +31,52 @@ import { HqAuthService } from './services/hq-auth/hq-auth.service';
 import { ExtendDonorScopeModule } from './hq/extend-donor-scope/extend-donor-scope.module';
 import { GetBanksModule } from './donor/get-banks/get-banks.module';
 import { RemoveBankModule } from './donor/remove-bank/remove-bank.module';
+import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AddBankModule } from './donor/add-bank/add-bank.module';
-
+import { APP_FILTER } from '@nestjs/core';
 
 @Module({
-  imports: [SendOtpModule, ConfigModule.forRoot(), UserStatsModule, NeonModule, SignupModule, UpdateLocationModule, UpdateNotificationsModule, LoginModule, GetDonorModule, GetStatsModule, VerifyDonorModule, RequestUserDataModule, RejectDonorModule, QueryDonorModule, MarkDonatedModule, GeocodeLocationModule, RequestBloodModule, BirthdayModule, BanksModule, CreateBankModule, ExtendDonorScopeModule, GetBanksModule, RemoveBankModule, AddBankModule],
+  imports: [
+    SentryModule.forRoot(),
+    SendOtpModule,
+    ConfigModule.forRoot(),
+    UserStatsModule,
+    NeonModule,
+    SignupModule,
+    UpdateLocationModule,
+    UpdateNotificationsModule,
+    LoginModule,
+    GetDonorModule,
+    GetStatsModule,
+    VerifyDonorModule,
+    RequestUserDataModule,
+    RejectDonorModule,
+    QueryDonorModule,
+    MarkDonatedModule,
+    GeocodeLocationModule,
+    RequestBloodModule,
+    BirthdayModule,
+    BanksModule,
+    CreateBankModule,
+    ExtendDonorScopeModule,
+    GetBanksModule,
+    RemoveBankModule,
+    AddBankModule,
+  ],
   controllers: [AppController],
-  providers: [AppService, DBService, OTPService, TimestampService, NeonService, SMSService, NotificationService, HqAuthService],
+  providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SentryGlobalFilter,
+    },
+    AppService,
+    DBService,
+    OTPService,
+    TimestampService,
+    NeonService,
+    SMSService,
+    NotificationService,
+    HqAuthService,
+  ],
 })
 export class AppModule {}
