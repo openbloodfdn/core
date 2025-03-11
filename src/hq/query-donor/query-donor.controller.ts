@@ -44,7 +44,7 @@ export class QueryDonorController {
     let auth = await this.hqAuthService.authenticate(bankCode, token);
     if (auth.error === false) {
       if (request.unverified === true) {
-        let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users where verified=0`;
+        let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users WHERE verified=0 AND scope LIKE '%"${bankCode}"%';`;
         let users = await this.neonService.query(queryString);
         let finalTimestamp = new Date();
         let elapsed = finalTimestamp.getTime() - initialTimestamp.getTime();

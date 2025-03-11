@@ -2,7 +2,6 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
-
 @Controller('donor/send-otp')
 export class SendOtpController {
   /**
@@ -42,8 +41,8 @@ export class SendOtpController {
             message: 'OTP verified',
             uuid: checkIFUserExists[0].uuid,
             bank: {
-              id: checkIFUserExists[0].scope[0]
-            }
+              id: checkIFUserExists[0].scope[0],
+            },
           };
         } else {
           return { error: true, message: 'OTP incorrect' };
@@ -55,7 +54,12 @@ export class SendOtpController {
       );
       if (checkIFUserExists.length === 0) {
         if (allowSignup) {
-          let otp = Math.floor(1000 + Math.random() * 9000);
+          let otp =
+            process.env.inReview === 'true' &&
+            process.env.reviewNumbers &&
+            process.env.reviewNumbers.split(',').includes(phone)
+              ? 1234
+              : Math.floor(1000 + Math.random() * 9000);
           let sendOTPRecord = await this.smsService
             .send(
               phone,
@@ -81,7 +85,8 @@ export class SendOtpController {
         let otp = Math.floor(1000 + Math.random() * 9000);
         if (
           process.env.inReview === 'true' &&
-          phone === process.env.reviewNumber
+          process.env.reviewNumbers &&
+          process.env.reviewNumbers.split(',').includes(phone)
         ) {
           otp = 1234;
         } else {
