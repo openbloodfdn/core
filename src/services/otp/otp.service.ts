@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Twilio } from 'twilio';
+let inReview = process.env.inReview;
+let reviewNumbers = process.env.reviewNumbers;
 
 @Injectable()
 export class OTPService {
@@ -13,6 +15,13 @@ export class OTPService {
   }
 
   async send(phone: string, otp: number) {
+    if (inReview == 'true' && !reviewNumbers?.split(',').includes(phone)) {
+      console.log(`Review Mode: SMS to ${phone} blocked`);
+      return {
+        error: true,
+        message: 'OTP not sent because app is in review mode',
+      };
+    }
     console.log('OTPService', phone, otp);
     // sanitize phone
     phone = phone.replace(/\s/g, '').replace('+91', '');

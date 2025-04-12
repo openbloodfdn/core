@@ -34,6 +34,7 @@ import { RemoveBankModule } from './donor/remove-bank/remove-bank.module';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AddBankModule } from './donor/add-bank/add-bank.module';
 import { APP_FILTER } from '@nestjs/core';
+import { RegenerateIdModule } from './donor/regenerate-id/regenerate-id.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { APP_FILTER } from '@nestjs/core';
     GetBanksModule,
     RemoveBankModule,
     AddBankModule,
+    RegenerateIdModule,
   ],
   controllers: [AppController],
   providers: [

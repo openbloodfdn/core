@@ -26,7 +26,7 @@ export class RejectDonorController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT phone FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT phone,scope FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
       );
       if (donor.length === 0) {
         return {
@@ -35,18 +35,33 @@ export class RejectDonorController {
         };
       }
       try {
-        let updatedDonor = await this.neonService.query(
-          `DELETE FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
-        );
+        if (donor[0].scope.length > 1) {
+          //remove bankCode from scope array
+          let scope = donor[0].scope;
+          scope = scope.filter((s) => s !== bankCode);
+          console.log(JSON.stringify(scope));
+          await this.neonService.query(
+            `UPDATE users SET scope = '${JSON.stringify(scope)}' WHERE uuid='${uuid}';`,
+          );
+        } else {
+          let updatedDonor = await this.neonService.query(
+            `DELETE FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
+          );
+        }
+
         let getBankDetails = await this.neonService.query(
           `SELECT name,phone FROM banks WHERE uuid = '${bankCode}';`,
         );
         let send = await this.smsService
           .send(
             `+91${donor[0].phone}`,
-            `Your Open Blood profile has been rejected by ${
+            `Your Open Blood profile was rejected by ${
               getBankDetails[0].name
-            }. Please contact your blood bank for more information at ${
+            }. ${
+              donor[0].scope.length > 1
+                ? `You're still a donor with ${donor[0].scope.length - 1} other bank${donor[0].scope.length - 1 > 1 ? 's' : ''}.`
+                : `Since you're not a donor with any other bank, you will have to reapply for a new Open Blood profile.`
+            } You can contact this blood bank for more information at ${
               getBankDetails[0].phone
             }`,
           )

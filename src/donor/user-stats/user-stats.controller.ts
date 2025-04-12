@@ -11,7 +11,7 @@ export class UserStatsController {
   ) {}
 
   @Post()
-  async getUserStats(@Body() body: { token: string, bank: string }) {
+  async getUserStats(@Body() body: { token: string; bank: string }) {
     let { token, bank } = body;
     console.log(token, bank);
     if (!token) {
@@ -20,6 +20,9 @@ export class UserStatsController {
       let getUserFromToken = await this.neonService.query(
         `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords,scope FROM users WHERE uuid='${token}';`,
       );
+      if (!getUserFromToken[0].scope.includes(bank)) {
+        bank = getUserFromToken[0].scope[0];
+      }
       let getbankdata = await this.neonService.query(
         `SELECT name,phone,uuid FROM banks WHERE uuid='${bank}';`,
       );
