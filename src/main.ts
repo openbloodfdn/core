@@ -1,4 +1,4 @@
-import "./instrument";
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {
@@ -96,7 +96,7 @@ async function bootstrap() {
                 if (
                   (await notificationService.isValidToken(pushToken)) === false
                 ) {
-                  /*console.warn(
+                  console.warn(
                     `${notificationobj.phone}: Push token is not valid. Falling back to SMS.`,
                   );
                   let sendSMS = await smsService
@@ -108,20 +108,11 @@ async function bootstrap() {
                     )
                     .then((res) => {
                       sentSMS = sentSMS + 1;
-                      ws.send(
-                        `$ckpt%3%${JSON.stringify({
-                          x: sentPush,
-                          y: sentSMS,
-                          e: bounced,
-                        })}`,
-                      );
                     })
                     .catch((err) => {
                       bounced = bounced + 1;
                       console.warn('Error pushing SMS: ', err);
                     });
-                    */
-                  bounced = bounced + 1;
                   //continue;
                 } else {
                   messages.push({
@@ -143,7 +134,7 @@ async function bootstrap() {
                   sentPush = sentPush + 1;
                 }
               }
-              let batchAndSend = await notificationService.batch(messages);
+              await notificationService.batch(messages);
               ws.send(
                 `$ckpt%3%${JSON.stringify({
                   x: sentPush,

@@ -24,6 +24,7 @@ export class SignupController {
       conditions: string;
       coords: string;
       scope: string;
+      os: string;
     },
   ) {
     let getUserFromUsername = await this.neonService.query(
@@ -56,25 +57,44 @@ export class SignupController {
 22	notification	TEXT
 23	conditions	TEXT
 24  installed BOOLEAN
+25  coords TEXT
+26  scope TEXT[]
+27  os TEXT
 );
  */
-      let prompt = `INSERT INTO users (name, phone, uuid, bloodtype, lastdonated, sms, totaldonated, weight, height, dob, verified, otp, birthdayhero, distance, sex, medications, conditions, installed, coords, log, scope) VALUES ('${
-        request.name
-      }' , '${request.phonenumber
-        .toString()
-        .replace('+91', '')
-        .replace(/\s/g, '')}', '${shortid.generate()}', '${
-        request.bloodtype
-      }', NULL, true, ${0}, ${parseInt(request.weight)}, ${parseInt(
-        request.height,
-      )}, '${request.dob}', 0, null, ${request.birthdayhero}, ${request.distance}, '${
-        request.sex
-      }', '${request.medications}', '${request.conditions}', true, '${
-        request.coords
-      }', '[]', '["${request.scope}"]') returning name,phone,uuid;`;
-      console.log(prompt);
 
-      let insertUser = await this.neonService.query(prompt);
+      const prompt = `
+  INSERT INTO users (
+    name, phone, uuid, bloodtype, lastdonated, sms, totaldonated,
+    weight, height, dob, verified, otp, birthdayhero, distance,
+    sex, medications, conditions, installed, coords, log, scope, os
+  ) VALUES (
+    ?, ?, ?, ?, NULL, true, ?, ?, ?, ?, 0, null, ?, ?, ?, ?, ?, true, ?, '[]', ?, ''
+  ) RETURNING name, phone, uuid;
+`;
+
+      const params = [
+        request.name,
+        request.phonenumber.toString().replace('+91', '').replace(/\s/g, ''),
+        shortid.generate(),
+        request.bloodtype,
+        0,
+        parseInt(request.weight),
+        parseInt(request.height),
+        request.dob,
+        request.birthdayhero,
+        request.distance,
+        request.sex,
+        request.medications,
+        request.conditions,
+        request.coords,
+        `["${request.scope}"]`,
+        request.os,
+      ];
+
+      const insertUser = await this.neonService.execute(prompt, params);
+
+      // result.rows[0] contains your returned values
 
       if (request.lookupid !== '') {
         await this.neonService.query(

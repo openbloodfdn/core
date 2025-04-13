@@ -20,6 +20,16 @@ export class BanksController {
           coords: string;
         }) => bank.uuid == 'staging',
       );
+    } else {
+      banks = banks.filter(
+        (bank: {
+          uuid: string;
+          name: string;
+          phone: string;
+          region: string;
+          coords: string;
+        }) => bank.uuid != 'staging',
+      );
     }
     return { error: false, banks: banks };
   }

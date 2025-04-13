@@ -155,12 +155,25 @@ export class NeonService {
     if (query.split(';').length > 2) {
       return { error: true, message: 'Only one query is allowed' };
     } else {
-      console.debug(query)
+      console.debug(query);
       const result = await this.db.execute(query);
       result.rows.forEach((element: any, index: number) => {
         result.rows[index] = this.fix(element);
       });
       //console.debug(result.rows)
+      return result.rows;
+    }
+  }
+  //db.execute({ sql: prompt, args: params })
+
+  async execute(query: string, params: any[]) {
+    if (query.split(';').length > 2) {
+      return { error: true, message: 'Only one query is allowed' };
+    } else {
+      const result = await this.db.execute({ sql: query, args: params });
+      result.rows.forEach((element: any, index: number) => {
+        result.rows[index] = this.fix(element);
+      });
       return result.rows;
     }
   }

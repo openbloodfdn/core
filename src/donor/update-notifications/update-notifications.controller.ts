@@ -7,7 +7,7 @@ export class UpdateNotificationsController {
 
   @Post()
   async updateNotifications(
-    @Body() request: { uuid: string; notificationToken: string },
+    @Body() request: { uuid: string; notificationToken: string; os: string },
   ) {
     let { uuid, notificationToken } = request;
     let donor = await this.neonService.query(
@@ -17,7 +17,7 @@ export class UpdateNotificationsController {
       return { error: true, message: 'Donor not found' };
     } else if (donor[0].notification != notificationToken) {
       await this.neonService.query(
-        `UPDATE users SET notification= '${notificationToken}' WHERE uuid = '${uuid}';`,
+        `UPDATE users SET notification= '${notificationToken}', os = '${request.os}' WHERE uuid = '${uuid}';`,
       );
       return {
         error: false,
