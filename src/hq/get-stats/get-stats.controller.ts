@@ -27,22 +27,23 @@ export class GetStatsController {
        * totaldonors:
        * totaldonated:
        */
-      let totalDonators = await this.neonService.query(
-        `SELECT verified FROM users WHERE scope LIKE '%"${bankCode}"%';`,
-      );
       let bbName = await this.neonService.query(
-        `SELECT name FROM banks WHERE uuid='${bankCode}';`,
+        `SELECT name,total,verified,donated FROM banks WHERE uuid='${bankCode}';`,
       );
-      let totalDonated = await this.neonService.query(
-        `SELECT SUM(totaldonated) FROM users WHERE scope LIKE '%"${bankCode}"%';`,
-      );
+      console.log({
+        name: bbName[0].name,
+        totalDonors: bbName[0].total,
+        verified: bbName[0].verified,
+        totalDonated: bbName[0].donated,
+      })
       return {
         error: false,
         message: 'Login successful',
         data: {
           name: bbName[0].name,
-          totalDonors: totalDonators,
-          totalDonated: totalDonated[0]['SUM(totaldonated)'],
+          totalDonors: bbName[0].total,
+          verified: bbName[0].verified,
+          totalDonated: bbName[0].donated,
         },
       };
     } else {

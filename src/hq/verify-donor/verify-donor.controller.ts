@@ -49,6 +49,9 @@ export class VerifyDonorController {
         let verifyDonor = await this.neonService.query(
           `UPDATE users SET verified = true WHERE uuid = '${uuid}';`,
         );
+        let updateBank = await this.neonService.query(
+          `UPDATE banks SET verified = verified + 1 WHERE uuid = '${bankCode}';`,
+        );
         let getLog = await this.neonService.query(`
           SELECT log FROM users WHERE uuid = '${uuid}';`);
         let log = getLog[0].log;

@@ -28,7 +28,7 @@ export class MarkDonatedController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT name,phone,totaldonated,notification,bloodtype,scope FROM users WHERE uuid = '${uuid}';` //AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT name,phone,totaldonated,notification,bloodtype,scope FROM users WHERE uuid = '${uuid}';`, //AND scope LIKE '%"${bankCode}"%';`,
       );
       if (donor.length === 0) {
         return { error: true, message: 'Donor does not exist.' };
@@ -39,17 +39,21 @@ export class MarkDonatedController {
         );
         let log = getLog[0].log;
         log.push({ x: `d-${donor[0].bloodtype}`, y: now.toISOString() });
-        let updatedLog = await this.neonService.query(
-          `UPDATE users SET log = '${JSON.stringify(log)}' WHERE uuid = '${uuid}';`//AND scope LIKE '%"${bankCode}"%';`,
+        await this.neonService.query(
+          `UPDATE users SET log = '${JSON.stringify(log)}' WHERE uuid = '${uuid}';`, //AND scope LIKE '%"${bankCode}"%';`,
         );
         //update last donated
         let updatedDonor = await this.neonService.query(
-          `UPDATE users SET lastdonated = '${now.toISOString()}' WHERE uuid = '${uuid}';`// AND scope LIKE '%"${bankCode}"%';`,
+          `UPDATE users SET lastdonated = '${now.toISOString()}' WHERE uuid = '${uuid}';`, // AND scope LIKE '%"${bankCode}"%';`,
         );
         //add to total donated
         let newTotal = donor[0].totaldonated + 1;
-        let updatedTotal = await this.neonService.query(
-          `UPDATE users SET totaldonated = ${newTotal} WHERE uuid = '${uuid}';`// AND scope LIKE '%"${bankCode}"%';`,
+        await this.neonService.query(
+          `UPDATE users SET totaldonated = ${newTotal} WHERE uuid = '${uuid}';`, // AND scope LIKE '%"${bankCode}"%';`,
+        );
+        //update bank
+        await this.neonService.query(
+          `UPDATE banks SET donated = donated + 1 WHERE uuid = '${bankCode}';`,
         );
         //notification
         let messages: ExpoPushMessage[] = [];

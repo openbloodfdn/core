@@ -76,7 +76,7 @@ export class NeonService {
       default: '',
     },
     verified: {
-      convert: (val: number) => val == 1,
+      convert: (val: number) => val == 1 || val == 0 ? val == 1 : val,
       default: false,
     },
     log: {

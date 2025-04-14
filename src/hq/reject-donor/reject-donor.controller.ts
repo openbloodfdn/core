@@ -26,7 +26,7 @@ export class RejectDonorController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT phone,scope FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
+        `SELECT phone,scope,verified FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
       );
       if (donor.length === 0) {
         return {
@@ -43,16 +43,32 @@ export class RejectDonorController {
           await this.neonService.query(
             `UPDATE users SET scope = '${JSON.stringify(scope)}' WHERE uuid='${uuid}';`,
           );
+          await this.neonService.query(
+            `UPDATE banks SET total = total - 1 WHERE uuid = '${bankCode}';`,
+          );
+          if(donor[0].verified === true) {
+            await this.neonService.query(
+              `UPDATE banks SET verified = verified - 1 WHERE uuid = '${bankCode}';`,
+            );
+          }
         } else {
-          let updatedDonor = await this.neonService.query(
+          await this.neonService.query(
             `DELETE FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
           );
+          await this.neonService.query(
+            `UPDATE banks SET total = total - 1 WHERE uuid = '${bankCode}';`,
+          );
+          if(donor[0].verified === true) {
+            await this.neonService.query(
+              `UPDATE banks SET verified = verified - 1 WHERE uuid = '${bankCode}';`,
+            );
+          }
         }
 
         let getBankDetails = await this.neonService.query(
           `SELECT name,phone FROM banks WHERE uuid = '${bankCode}';`,
         );
-        let send = await this.smsService
+        await this.smsService
           .send(
             `+91${donor[0].phone}`,
             `Your Open Blood profile was rejected by ${

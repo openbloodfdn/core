@@ -94,6 +94,9 @@ export class SignupController {
 
       const insertUser = await this.neonService.execute(prompt, params);
 
+      await this.neonService.query(
+        `UPDATE banks SET total = total + 1 WHERE uuid = '${request.scope}';`,
+      );
       // result.rows[0] contains your returned values
 
       if (request.lookupid !== '') {

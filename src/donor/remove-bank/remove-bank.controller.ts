@@ -12,7 +12,7 @@ export class RemoveBankController {
       return { error: true, message: 'User not found' };
     } else {
       let getUserFromToken = await this.neonService.query(
-        `SELECT scope FROM users WHERE uuid='${uuid}';`,
+        `SELECT scope,verified FROM users WHERE uuid='${uuid}';`,
       );
       if (getUserFromToken.length > 0) {
         //remove bank from user
@@ -23,6 +23,14 @@ export class RemoveBankController {
         await this.neonService.query(
           `UPDATE users SET scope = '${JSON.stringify(localScope)}' WHERE uuid='${uuid}';`,
         );
+        await this.neonService.query(
+          `UPDATE banks SET total = total - 1 WHERE uuid = '${bankcode}';`,
+        );
+        if (getUserFromToken[0].verified === true) {
+          await this.neonService.query(
+            `UPDATE banks SET verified = verified - 1 WHERE uuid = '${bankcode}';`,
+          );
+        }
         return {
           error: false,
           message: 'Bank removed',

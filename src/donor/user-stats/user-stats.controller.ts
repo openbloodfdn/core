@@ -24,13 +24,9 @@ export class UserStatsController {
         bank = getUserFromToken[0].scope[0];
       }
       let getbankdata = await this.neonService.query(
-        `SELECT name,phone,uuid FROM banks WHERE uuid='${bank}';`,
+        `SELECT name,phone,uuid,total FROM banks WHERE uuid='${bank}';`,
       );
       if (getUserFromToken.length > 0 && getbankdata.length > 0) {
-        //get total donators
-        let totalDonators = await this.neonService.query(
-          `SELECT COUNT(*) FROM users WHERE scope LIKE '%"${bank}"%';`,
-        );
         return {
           error: false,
           message: 'User found',
@@ -45,7 +41,7 @@ export class UserStatsController {
             lastDonated: this.timestampService.toShortString(
               getUserFromToken[0].lastdonated?.toString(),
             ),
-            totalDonators: totalDonators[0]['COUNT(*)'],
+            totalDonators: getbankdata[0].total,
             donatingSince: this.timestampService.toShortString(
               getUserFromToken[0].created_on?.toString(),
             ),
