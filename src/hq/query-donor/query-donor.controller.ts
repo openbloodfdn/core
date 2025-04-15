@@ -65,7 +65,7 @@ export class QueryDonorController {
         let date = new Date();
         date.setMonth(date.getMonth() - months);
         queryString += ` ${
-          verified === true || whereHasBeenUsed ? 'AND' : 'WHERE'
+          verified === true || whereHasBeenUsed ? 'AND' : 'WHERE ('
         } (lastdonated < '${date.toISOString()}' OR lastdonated IS NULL)`;
 
         if (verified === false) {
@@ -75,7 +75,7 @@ export class QueryDonorController {
 
       if (distance != null) {
         queryString += ` ${
-          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
+          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE ('
         } distance < ${distance}`;
 
         if (verified === false) {
@@ -85,7 +85,7 @@ export class QueryDonorController {
 
       if (bloodtype?.trim() !== '') {
         queryString += ` ${
-          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
+          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE ('
         } bloodtype = '${bloodtype}'`;
 
         if (verified === false) {
@@ -94,7 +94,7 @@ export class QueryDonorController {
       }
       if (name?.trim() !== '') {
         queryString += ` ${
-          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
+          verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE ('
         } name LIKE '%${name}%' COLLATE NOCASE OR phone LIKE '%${name}%' COLLATE NOCASE`;
 
         if (verified === false) {
@@ -102,7 +102,7 @@ export class QueryDonorController {
         }
       }
       queryString += ` ${
-        verified === true || whereHasBeenUsed === true ? 'AND' : 'WHERE'
+        verified === true || whereHasBeenUsed === true ? ') AND' : 'WHERE'
       } scope LIKE '%"${bankCode}"%' ORDER BY distance ASC;`;
       console.log(queryString);
 
