@@ -36,22 +36,27 @@ export class VerifyDonorController {
     if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
-        `SELECT bloodtype,uuid,phone,notification FROM users WHERE uuid = '${uuid}'` 
+        `SELECT bloodtype,uuid,phone,notification,verified FROM users WHERE uuid = '${uuid}'`,
         //AND scope LIKE '%"${bankCode}"%';`,
         //TODO: ^ questionable.
       );
       if (donor.length === 0) {
-        return { error: true, message: 'Donor is out of your scope or does not exist' };
+        return {
+          error: true,
+          message: 'Donor is out of your scope or does not exist',
+        };
       } else {
         let updatedDonor = await this.neonService.query(
           `UPDATE users SET bloodtype = '${bloodtype}' WHERE uuid = '${uuid}';`,
         );
-        let verifyDonor = await this.neonService.query(
-          `UPDATE users SET verified = true WHERE uuid = '${uuid}';`,
-        );
-        let updateBank = await this.neonService.query(
-          `UPDATE banks SET verified = verified + 1 WHERE uuid = '${bankCode}';`,
-        );
+        if (donor[0].verified !== true) {
+          let verifyDonor = await this.neonService.query(
+            `UPDATE users SET verified = true WHERE uuid = '${uuid}';`,
+          );
+          let updateBank = await this.neonService.query(
+            `UPDATE banks SET verified = verified + 1 WHERE uuid = '${bankCode}';`,
+          );
+        }
         let getLog = await this.neonService.query(`
           SELECT log FROM users WHERE uuid = '${uuid}';`);
         let log = getLog[0].log;
@@ -64,7 +69,7 @@ export class VerifyDonorController {
         );
         if (conditions.trim() != '') {
           let updatedConditions = await this.neonService.query(
-            `UPDATE users SET conditions = ${conditions}' WHERE uuid = '${uuid}';`,
+            `UPDATE users SET conditions = '${conditions}' WHERE uuid = '${uuid}';`,
           );
         }
         if (medications.trim() != '') {
@@ -92,7 +97,7 @@ export class VerifyDonorController {
                 error: true,
                 message: 'Error sending verification notification',
               };
-            }); 
+            });
         } else {
           let send = await this.smsService
             .send(
