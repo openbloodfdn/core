@@ -55,7 +55,7 @@ export class QueryDonorController {
       }
       let whereHasBeenUsed = false;
       let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users ${
-        verified == true ? 'WHERE verified = 1 ' : ''
+        verified == true ? 'WHERE (verified = 1 ' : ''
       }`; /*${
         affiliated
           ? `${verified === true ? 'AND' : 'WHERE'} affiliated = true`
