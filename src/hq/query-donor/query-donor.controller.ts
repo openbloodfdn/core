@@ -20,7 +20,6 @@ export class QueryDonorController {
    * @params {boolean} verified
    * @params {string} bloodtype
    * @params {number} distance
-   * @params {boolean} affiliated
    * @params {boolean} unverified
    * @params {string} name
    */
@@ -40,6 +39,7 @@ export class QueryDonorController {
   ) {
     let { bankCode, token, months, verified, bloodtype, distance, name } =
       request;
+      console.log(request);
     let initialTimestamp = new Date();
     let auth = await this.hqAuthService.authenticate(bankCode, token);
     if (auth.error === false) {
@@ -56,11 +56,7 @@ export class QueryDonorController {
       let whereHasBeenUsed = false;
       let queryString = `SELECT name,uuid,verified,bloodtype,distance,phone,lastdonated,totaldonated,dob,sex FROM users ${
         verified == true ? 'WHERE (verified = 1 ' : ''
-      }`; /*${
-        affiliated
-          ? `${verified === true ? 'AND' : 'WHERE'} affiliated = true`
-          : ''
-      }`;*/
+      }`;
       if (months != null) {
         let date = new Date();
         date.setMonth(date.getMonth() - months);
