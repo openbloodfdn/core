@@ -1,10 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from 'src/services/auth/auth.guard';
 import { NeonService } from 'src/services/neon/neon.service';
 
 @Controller('donor/update-notifications')
 export class UpdateNotificationsController {
   constructor(private readonly neonService: NeonService) {}
-
+  @UseGuards(AuthGuard)
   @Post()
   async updateNotifications(
     @Body() request: { uuid: string; notificationToken: string; os: string },

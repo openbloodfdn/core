@@ -4,10 +4,11 @@ import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { NeonModule } from 'src/services/neon/neon.module';
 import { SMSService } from 'src/services/sms/sms.service';
+import { AuthModule } from 'src/services/auth/auth.module';
 
 @Module({
   controllers: [SendOtpController],
   providers: [OTPService, NeonService, SMSService],
-  imports: [NeonModule],
+  imports: [NeonModule, AuthModule],
 })
 export class SendOtpModule {}

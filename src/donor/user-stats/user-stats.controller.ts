@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { DBService } from 'src/services/db/db.service';
 import { TimestampService } from 'src/services/timestamp/timestamp.service';
 import { NeonService } from 'src/services/neon/neon.service';
+import { AuthGuard } from 'src/services/auth/auth.guard';
 
 @Controller('donor/user-stats')
 export class UserStatsController {
@@ -9,16 +10,16 @@ export class UserStatsController {
     private readonly timestampService: TimestampService,
     private readonly neonService: NeonService,
   ) {}
-
+  @UseGuards(AuthGuard)
   @Post()
-  async getUserStats(@Body() body: { token: string; bank: string }) {
-    let { token, bank } = body;
-    console.log(token, bank);
-    if (!token) {
+  async getUserStats(@Body() body: { uuid: string; bank: string }) {
+    let { uuid, bank } = body;
+    console.log(uuid, bank);
+    if (!uuid) {
       return { error: true, message: 'User not found' };
     } else {
       let getUserFromToken = await this.neonService.query(
-        `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords,scope FROM users WHERE uuid='${token}';`,
+        `SELECT name,totaldonated,verified,lastdonated,created_on,log,installed,coords,scope FROM users WHERE uuid='${uuid}';`,
       );
       if (!getUserFromToken[0].scope.includes(bank)) {
         bank = getUserFromToken[0].scope[0];

@@ -35,12 +35,19 @@ import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AddBankModule } from './donor/add-bank/add-bank.module';
 import { APP_FILTER } from '@nestjs/core';
 import { RegenerateIdModule } from './donor/regenerate-id/regenerate-id.module';
+import { RefreshModule } from './donor/refresh/refresh.module';
+import { AuthService } from './services/auth/auth.service';
+import { HQRefreshModule } from './hq/refresh/refresh.module';
+import { BxService } from './services/bx/bx.service';
+import { QRModule } from './donor/qr/qr.module';
+import { CheckOtpModule } from './donor/check-otp/check-otp.module';
 
 @Module({
   imports: [
     SentryModule.forRoot(),
-    SendOtpModule,
     ConfigModule.forRoot(),
+
+    SendOtpModule,
     UserStatsModule,
     NeonModule,
     SignupModule,
@@ -64,6 +71,10 @@ import { RegenerateIdModule } from './donor/regenerate-id/regenerate-id.module';
     RemoveBankModule,
     AddBankModule,
     RegenerateIdModule,
+    RefreshModule,
+    HQRefreshModule,
+    QRModule,
+    CheckOtpModule,
   ],
   controllers: [AppController],
   providers: [
@@ -79,6 +90,8 @@ import { RegenerateIdModule } from './donor/regenerate-id/regenerate-id.module';
     SMSService,
     NotificationService,
     HqAuthService,
+    AuthService,
+    BxService,
   ],
 })
 export class AppModule {}

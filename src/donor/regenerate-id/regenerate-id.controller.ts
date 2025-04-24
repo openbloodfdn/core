@@ -1,14 +1,15 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { DBService } from 'src/services/db/db.service';
 import { TimestampService } from 'src/services/timestamp/timestamp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import * as shortid from 'shortid';
+import { AuthGuard } from 'src/services/auth/auth.guard';
 @Controller('donor/regenerate-id')
 export class RegenerateIdController {
   constructor(
     private readonly neonService: NeonService,
   ) {}
-
+  @UseGuards(AuthGuard)
   @Post()
   async getBanks(@Body() body: { uuid: string }) {
     let { uuid } = body;

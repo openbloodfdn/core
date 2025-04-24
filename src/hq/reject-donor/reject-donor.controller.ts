@@ -1,11 +1,10 @@
 import {
   Body,
   Controller,
-  HttpException,
-  HttpStatus,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { HqAuthService } from 'src/services/hq-auth/hq-auth.service';
+import { HQGuard } from 'src/services/auth/hq.guard';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
 
@@ -14,16 +13,13 @@ export class RejectDonorController {
   constructor(
     private readonly neonService: NeonService,
     private readonly smsService: SMSService,
-    private readonly hqAuthService: HqAuthService,
   ) {}
-
+@UseGuards(HQGuard)
   @Post()
   async rejectDonor(
     @Body() request: { bankCode: string; token: string; uuid: string },
   ) {
     let { bankCode, token, uuid } = request;
-    let auth = await this.hqAuthService.authenticate(bankCode, token);
-    if (auth.error === false) {
       uuid = uuid.replace('bloodbank-', '');
       let donor = await this.neonService.query(
         `SELECT phone,scope,verified FROM users WHERE uuid = '${uuid}' AND scope LIKE '%"${bankCode}"%';`,
@@ -94,8 +90,5 @@ export class RejectDonorController {
           message: `Error sending rejection SMS.`,
         };
       }
-    } else {
-      throw new HttpException('Forbidden', HttpStatus.FORBIDDEN);
-    }
   }
 }

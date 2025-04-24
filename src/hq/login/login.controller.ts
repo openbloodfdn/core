@@ -7,10 +7,14 @@ export class LoginController {
   constructor(private readonly hqAuthService: HqAuthService) {}
 
   @Post()
-  async login(@Body() request: { bankCode: string; loginCode: string }) {
-    let { bankCode, loginCode } = request;
-    let result = await this.hqAuthService.authenticate(bankCode.toLocaleLowerCase(), loginCode);
-    console.log(result)
+  async login(@Body() request: { bankCode: string; token: string }) {
+    let { bankCode, token } = request;
+    console.log(request);
+    let result = await this.hqAuthService.login(
+      bankCode.toLocaleLowerCase(),
+      token,
+    );
+    console.log(result);
     return result;
   }
 }

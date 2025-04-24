@@ -1,7 +1,8 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { DBService } from 'src/services/db/db.service';
 import { TimestampService } from 'src/services/timestamp/timestamp.service';
 import { NeonService } from 'src/services/neon/neon.service';
+import { AuthGuard } from 'src/services/auth/auth.guard';
 
 @Controller('donor/get-banks')
 export class GetBanksController {
@@ -9,7 +10,7 @@ export class GetBanksController {
     private readonly timestampService: TimestampService,
     private readonly neonService: NeonService,
   ) {}
-
+  @UseGuards(AuthGuard)
   @Post()
   async getBanks(@Body() body: { uuid: string }) {
     let { uuid } = body;

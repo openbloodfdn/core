@@ -25,7 +25,7 @@ async function bootstrap() {
   let hqAuthService = app.get(HqAuthService);
 
   server.on('upgrade', (request, socket, head) => {
-    if (request.url === '/request') {
+    if (request.url === '/bx') {
       wss.handleUpgrade(request, socket, head, (ws) => {
         wss.emit('connection', ws, request);
       });
@@ -57,7 +57,11 @@ async function bootstrap() {
           let auth = await hqAuthService.authenticate(bankCode, token);
           console.log('Auth:', auth);
           if (auth.error === false) {
-            ws.send(`%ckpt%0%true`);
+            ws.send(
+              `%ckpt%0%${JSON.stringify({
+                a: 1,
+              })}`,
+            );
             let now = new Date();
             //get time 3 months ago as a date object
             let minimumDate = new Date(
@@ -66,12 +70,12 @@ async function bootstrap() {
               now.getDate(),
             );
             console.log(minimumDate);
-            let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
+            /*let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
               months > 0
                 ? `AND (lastdonated <= '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
                 : ''
-            };`;
-            //let prompt = `SELECT name,notification,phone FROM users WHERE phone='123456' OR phone='9500499912'`
+            };`;*/
+            let prompt = `SELECT name,notification,phone FROM users WHERE phone='9500499912';`;
             console.log(prompt);
             let donors = await neonService.query(prompt);
 
@@ -130,13 +134,21 @@ async function bootstrap() {
                       name: 'default',
                       volume: 1,
                     },
+                    interruptionLevel: 'critical',
                   });
                   sentPush = sentPush + 1;
+                  ws.send(
+                    `%ckpt%3%${JSON.stringify({
+                      x: sentPush,
+                      y: sentSMS,
+                      e: bounced,
+                    })}`,
+                  );
                 }
               }
               await notificationService.batch(messages);
               ws.send(
-                `$ckpt%3%${JSON.stringify({
+                `%ckpt%3%${JSON.stringify({
                   x: sentPush,
                   y: sentSMS,
                   e: bounced,

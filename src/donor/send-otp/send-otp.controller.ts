@@ -2,6 +2,7 @@ import { Body, Controller, Post } from '@nestjs/common';
 import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
+import { AuthService } from 'src/services/auth/auth.service';
 @Controller('donor/send-otp')
 export class SendOtpController {
   /**
@@ -13,6 +14,7 @@ export class SendOtpController {
   constructor(
     private readonly neonService: NeonService,
     private readonly smsService: SMSService,
+    private readonly authService: AuthService,
   ) {}
   @Post()
   async sendOTP(
@@ -36,10 +38,45 @@ export class SendOtpController {
       } else {
         console.log(checkIFUserExists[0].otp, userEnteredOTP);
         if (parseInt(checkIFUserExists[0].otp) === parseInt(userEnteredOTP)) {
+          console.log('DEBUG');
+          console.log(
+            await this.authService.sign(
+              {
+                sub: checkIFUserExists[0].uuid,
+                intent: 'r',
+              },
+              {
+                expiresIn: '30d',
+              },
+            ),
+          );
           return {
+            access: {
+              token: await this.authService.sign(
+                {
+                  sub: checkIFUserExists[0].uuid,
+                  intent: 'n',
+                },
+                {
+                  expiresIn: '1h',
+                },
+              ),
+              exp: Math.floor(Date.now() / 1000) + 60 * 60,
+            },
+            refresh: {
+              token: await this.authService.sign(
+                {
+                  sub: checkIFUserExists[0].uuid,
+                  intent: 'r',
+                },
+                {
+                  expiresIn: '30d',
+                },
+              ),
+              exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
+            },
             error: false,
             message: 'OTP verified',
-            uuid: checkIFUserExists[0].uuid,
             bank: {
               id: checkIFUserExists[0].scope[0],
             },
@@ -75,7 +112,20 @@ export class SendOtpController {
           if (sendOTPRecord && 'sid' in sendOTPRecord) {
             console.log(sendOTPRecord.sid);
           }
-          return { error: false, otp: otp };
+          console.log(phone, otp)
+          return {
+            error: false,
+            lookuptoken: await this.authService.sign(
+              {
+                sub: phone,
+                otp: otp,
+                intent: 'p',
+              },
+              {
+                expiresIn: '2h',
+              },
+            ),
+          };
         } else {
           return { error: true, message: 'User not found' };
         }

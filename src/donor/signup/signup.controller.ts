@@ -1,9 +1,13 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import * as shortid from 'shortid';
+import { AuthService } from 'src/services/auth/auth.service';
 import { NeonService } from 'src/services/neon/neon.service';
 @Controller('donor/signup')
 export class SignupController {
-  constructor(private readonly neonService: NeonService) {}
+  constructor(
+    private readonly neonService: NeonService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post()
   async signup(
@@ -15,7 +19,6 @@ export class SignupController {
       height: string;
       age: string;
       bloodtype: string;
-      lookupid: string;
       dob: string;
       birthdayhero: boolean;
       distance: number;
@@ -69,7 +72,7 @@ export class SignupController {
     weight, height, dob, verified, otp, birthdayhero, distance,
     sex, medications, conditions, installed, coords, log, scope, os
   ) VALUES (
-    ?, ?, ?, ?, NULL, true, ?, ?, ?, ?, 0, null, ?, ?, ?, ?, ?, true, ?, '[]', ?, ''
+    ?, ?, ?, ?, NULL, true, ?, ?, ?, ?, 0, null, ?, ?, ?, ?, ?, true, ?, '[]', ?, ?
   ) RETURNING name, phone, uuid;
 `;
 
@@ -91,24 +94,49 @@ export class SignupController {
         `["${request.scope}"]`,
         request.os,
       ];
-
+      console.log(params);
       const insertUser = await this.neonService.execute(prompt, params);
 
-      await this.neonService.query(
-        `UPDATE banks SET total = total + 1 WHERE uuid = '${request.scope}';`,
+      const bankUpdate = await this.neonService.query(
+        `UPDATE banks SET total = total + 1 WHERE uuid = '${request.scope}' returning name;`,
       );
       // result.rows[0] contains your returned values
-
-      if (request.lookupid !== '') {
-        await this.neonService.query(
-          `DELETE from localups WHERE uuid='${request.lookupid}';`,
-        );
-      }
+      await this.neonService.query(
+        `DELETE from localups WHERE uuid='${request.phonenumber}';`,
+      );
       console.log(insertUser);
       return {
         error: false,
         message: 'Account created!',
-        data: insertUser[0],
+        access: {
+          token: await this.authService.sign(
+            {
+              sub: insertUser[0].uuid,
+              intent: 'n',
+            },
+            {
+              expiresIn: '1h',
+            },
+          ),
+          exp: Math.floor(Date.now() / 1000) + 60 * 60,
+        },
+        refresh: {
+          token: await this.authService.sign(
+            {
+              sub: insertUser[0].uuid,
+              intent: 'r',
+            },
+            {
+              expiresIn: '14d',
+            },
+          ),
+          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 14,
+        },
+        data: {
+          phone: insertUser[0].phone,
+          name: insertUser[0].name,
+          bankName: bankUpdate[0].name,
+        },
       };
     }
   }

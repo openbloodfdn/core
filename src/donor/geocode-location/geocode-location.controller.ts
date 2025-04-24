@@ -1,17 +1,31 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { PreAuthGuard } from 'src/services/auth/preauth.guard';
 import { NeonService } from 'src/services/neon/neon.service';
-import * as shortid from 'shortid';
 @Controller('donor/geocode-location')
 export class GeocodeLocationController {
   constructor(private readonly neonService: NeonService) {}
-
+  @UseGuards(PreAuthGuard)
   @Post()
   async geocodeLocation(@Body() request: { uuid: string; address: string }) {
     let { address, uuid } = request;
-    let shortuuid = uuid === '' ? shortid.generate() : uuid;
+    console.log(request);
+    let shortuuid = uuid;
+    let isNewUser = false;
+    let doUserLookup = await this.neonService.query(
+      `SELECT uuid from users where uuid='${shortuuid}';`,
+    );
+    if (doUserLookup.length != 0) {
+      let doesUUIDmatch = await this.neonService.query(
+        `SELECT uuid from localups where uuid='${shortuuid}';`,
+      );
+      if (doesUUIDmatch.length == 0) {
+        isNewUser = true;
+      }
+    }
+
     console.log('address', address);
     let userGeocodeCount = 0;
-    if (uuid !== '') {
+    if (!isNewUser) {
       let getLookup = await this.neonService.query(
         `SELECT reqs FROM localups WHERE uuid='${uuid}';`,
       );
@@ -49,6 +63,7 @@ export class GeocodeLocationController {
     }
     console.log(geocodeResponse);
     if (geocodeResponse.status !== 'OK') {
+      console.log('error', geocodeResponse);
       return {
         error: true,
         message: 'We were unable to locate the address you provided',
@@ -62,22 +77,34 @@ export class GeocodeLocationController {
       let distance = calcCrow({ latitude: lat, longitude: lng });
       console.log(distance);
 
-      if (uuid !== '') {
+      if (!isNewUser) {
         console.log(
           `EXP: loc (${lat},${lng}) updated for ${shortuuid}\n distance: ${distance}`,
         );
-        let updateLocation = await this.neonService.query(
+        await this.neonService.query(
           `UPDATE localups SET loc='${lat},${lng}', reqs=${userGeocodeCount + 1} WHERE uuid='${shortuuid}';`,
         );
       } else {
         console.log(
           `EXP: loc (${lat},${lng}) saved to ${shortuuid}\n distance: ${distance}`,
         );
-        let updateLocation = await this.neonService.query(
+        await this.neonService.query(
           `INSERT INTO localups (uuid, loc, reqs) VALUES ('${shortuuid}', '${lat},${lng}', 0);`,
         );
       }
-      console.log(lat, lng);
+      console.log({
+        error: false,
+        message: 'Location found',
+        data: {
+          distance: distance,
+          uuid: shortuuid,
+          formattedAddress: formattedAddress,
+          coords: {
+            latitude: lat,
+            longitude: lng,
+          },
+        },
+      });
       return {
         error: false,
         message: 'Location found',
@@ -85,6 +112,10 @@ export class GeocodeLocationController {
           distance: distance,
           uuid: shortuuid,
           formattedAddress: formattedAddress,
+          coords: {
+            latitude: lat,
+            longitude: lng,
+          },
         },
       };
     }
