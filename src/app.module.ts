@@ -33,7 +33,7 @@ import { GetBanksModule } from './donor/get-banks/get-banks.module';
 import { RemoveBankModule } from './donor/remove-bank/remove-bank.module';
 import { SentryGlobalFilter, SentryModule } from '@sentry/nestjs/setup';
 import { AddBankModule } from './donor/add-bank/add-bank.module';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { RegenerateIdModule } from './donor/regenerate-id/regenerate-id.module';
 import { RefreshModule } from './donor/refresh/refresh.module';
 import { AuthService } from './services/auth/auth.service';
@@ -41,12 +41,33 @@ import { HQRefreshModule } from './hq/refresh/refresh.module';
 import { BxService } from './services/bx/bx.service';
 import { QRModule } from './donor/qr/qr.module';
 import { CheckOtpModule } from './donor/check-otp/check-otp.module';
+import {
+  minutes,
+  seconds,
+  ThrottlerGuard,
+  ThrottlerModule,
+} from '@nestjs/throttler';
 
 @Module({
   imports: [
     SentryModule.forRoot(),
-    ConfigModule.forRoot(),
-
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'default',
+          ttl: seconds(1),
+          limit: 5,
+        },
+        {
+          name: 'long',
+          ttl: minutes(1),
+          limit: 100, // 100 requests per minute
+        },
+      ],
+    }),
     SendOtpModule,
     UserStatsModule,
     NeonModule,
@@ -81,6 +102,10 @@ import { CheckOtpModule } from './donor/check-otp/check-otp.module';
     {
       provide: APP_FILTER,
       useClass: SentryGlobalFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
     AppService,
     DBService,

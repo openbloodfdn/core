@@ -104,10 +104,11 @@ export class VerifyDonorController {
           });
       } else {
         let send = await this.smsService
-          .send(
-            `+91${donor[0].phone}`,
-            `You've been verified as a donor for blood type ${bloodtype}! Please contact the blood bank if there are any issues.`,
-          )
+          .sendMessage({
+            phone: `91${donor[0].phone}`,
+            message: `You've been verified as a donor for blood type ${bloodtype}! Please contact the blood bank if there are any issues.`,
+            footer: 'Thank you for being a part of Open Blood.',
+          })
           .catch((err) => {
             return { error: true, message: 'Error sending verification SMS' };
           });

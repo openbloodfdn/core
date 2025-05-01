@@ -20,13 +20,13 @@ export class MarkDonatedController {
     private readonly smsService: SMSService,
     private readonly authService: AuthService,
   ) {}
-@UseGuards(HQGuard)
+  @UseGuards(HQGuard)
   @Post()
   async markDonated(
     @Body() request: { bankCode: string; token: string; uuid: string },
   ) {
     let { bankCode, uuid } = request;
-    uuid = uuid.replace('ob-', '')
+    uuid = uuid.replace('ob-', '');
     let donor = await this.neonService.query(
       `SELECT name,phone,totaldonated,notification,bloodtype,scope FROM users WHERE uuid = '${uuid}';`, //AND scope LIKE '%"${bankCode}"%';`,
     );
@@ -63,10 +63,10 @@ export class MarkDonatedController {
           `Push token ${pushToken} is not a valid Expo push token. Falling back to SMS.`,
         );
         let sms = await this.smsService
-          .send(
-            donor[0].phone,
-            `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
-          )
+          .sendMessage({
+            phone: donor[0].phone,
+            message: `Thank you for donating, ${donor[0].name.split(' ')[0]}!`,
+          })
           .catch((e) => {
             console.error(
               `Error sending SMS to ${donor[0].phone}: ${e.message}`,

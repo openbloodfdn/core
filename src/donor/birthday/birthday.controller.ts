@@ -1,8 +1,15 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
 import { NotificationService } from 'src/services/notification/notification.service';
 import { ExpoPushMessage } from 'expo-server-sdk';
+import { HQGuard } from 'src/services/auth/hq.guard';
 
 @Controller('donor/birthday')
 export class BirthdayController {
@@ -11,12 +18,10 @@ export class BirthdayController {
     private readonly smsService: SMSService,
     private readonly notificationService: NotificationService,
   ) {}
-
+  
+  @UseGuards(HQGuard)
   @Post()
   async sendBirthdayAlerts(@Body() body: { token: string }) {
-    if (body.token !== process.env.HQ_TOKEN) {
-      throw new UnauthorizedException('Invalid token');
-    }
     const query = `SELECT name,notification,phone FROM users WHERE dob::date = CURRENT_DATE;`;
     const users = await this.neonService.query(query);
     let notificationBatch: ExpoPushMessage[] = [];
@@ -37,10 +42,11 @@ export class BirthdayController {
           body: `Celebrate your special day by donating blood!`,
         });
       } else {
-        await this.smsService.send(
-          phone,
-          `Happy Birthday, ${name.split(' ')[0]}! Celebrate your special day by donating blood!`,
-        );
+        // TODO: Get this back up
+        /*await this.smsService.sendMessage({
+          phone: phone,
+          message: `Happy Birthday, ${name.split(' ')[0]}! Celebrate your special day by donating blood!`,
+        });*/
       }
     }
     return { success: true, count: users.length, users };

@@ -3,6 +3,12 @@ import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
 import { AuthService } from 'src/services/auth/auth.service';
+import { Throttle, days, minutes } from '@nestjs/throttler';
+
+const inReview = process.env.inReview === 'true';
+const reviewNumbers = process.env.reviewNumbers
+  ? process.env.reviewNumbers.split(',')
+  : [];
 @Controller('donor/send-otp')
 export class SendOtpController {
   /**
@@ -16,6 +22,17 @@ export class SendOtpController {
     private readonly smsService: SMSService,
     private readonly authService: AuthService,
   ) {}
+
+  @Throttle({
+    default: {
+      limit: 6,
+      ttl: minutes(5),
+    },
+    long: {
+      limit: 16,
+      ttl: days(1),
+    },
+  })
   @Post()
   async sendOTP(
     @Body()
@@ -94,25 +111,27 @@ export class SendOtpController {
           let otp =
             process.env.inReview === 'true' &&
             process.env.reviewNumbers &&
-            process.env.reviewNumbers.split(',').includes(phone)
+            process.env.reviewNumbers
+              .split(',')
+              .includes(normalizeToE164(phone))
               ? 1234
               : Math.floor(1000 + Math.random() * 9000);
-          let sendOTPRecord = await this.smsService
-            .send(
-              phone,
-              `
-            Your Open Blood OTP is ${otp}`,
-            )
-            .catch((err) => {
-              return {
-                error: true,
-                message: 'Error sending OTP',
-              };
-            });
-          if (sendOTPRecord && 'sid' in sendOTPRecord) {
-            console.log(sendOTPRecord.sid);
+          if (inReview) {
+            console.log('In review mode, OTP is set to 1234');
+          } else {
+            let sendOTPRecord = await this.smsService
+              .sendOTPAutoOptIn(phone, otp)
+              .catch((err) => {
+                return {
+                  error: true,
+                  message: 'Error sending OTP',
+                };
+              });
+            if (sendOTPRecord && 'sid' in sendOTPRecord) {
+              console.log(sendOTPRecord.sid);
+            }
           }
-          console.log(phone, otp)
+          console.log(phone, otp);
           return {
             error: false,
             lookuptoken: await this.authService.sign(
@@ -136,16 +155,12 @@ export class SendOtpController {
         if (
           process.env.inReview === 'true' &&
           process.env.reviewNumbers &&
-          process.env.reviewNumbers.split(',').includes(phone)
+          process.env.reviewNumbers.split(',').includes(normalizeToE164(phone))
         ) {
           otp = 1234;
         } else {
           let sendOTPRecord = await this.smsService
-            .send(
-              phone,
-              `
-            Your Open Blood OTP is ${otp}`,
-            )
+            .sendOTPAutoOptIn(phone, otp)
             .catch((err) => {
               return {
                 error: true,
@@ -164,4 +179,23 @@ export class SendOtpController {
       }
     }
   }
+}
+
+function normalizeToE164(rawNumber: string): string {
+  console.debug(`normalizeToE164 number: ${rawNumber}`);
+  let digits = rawNumber.replace(/[^\d]/g, '');
+
+  if (digits.length === 10) {
+    digits = '91' + digits;
+  } else if (digits.length === 11 && digits.startsWith('0')) {
+    digits = '91' + digits.slice(1);
+  }
+
+  if (!/^\d{11,15}$/.test(digits)) {
+    console.warn(`Invalid phone number format: ${digits}`);
+    return '';
+  }
+
+  console.debug(`Normalized number: ${digits}`);
+  return digits;
 }

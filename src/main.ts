@@ -1,6 +1,7 @@
 import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import querystring from 'querystring';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -63,19 +64,18 @@ async function bootstrap() {
               })}`,
             );
             let now = new Date();
-            //get time 3 months ago as a date object
             let minimumDate = new Date(
               now.getFullYear(),
               now.getMonth() - months,
               now.getDate(),
             );
             console.log(minimumDate);
-            /*let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
+            let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
               months > 0
                 ? `AND (lastdonated <= '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
                 : ''
-            };`;*/
-            let prompt = `SELECT name,notification,phone FROM users WHERE phone='9500499912';`;
+            };`;
+            //let prompt = `SELECT name,notification,phone FROM users WHERE phone='9500499912';`;
             console.log(prompt);
             let donors = await neonService.query(prompt);
 
@@ -95,58 +95,59 @@ async function bootstrap() {
               let sentSMS = 0;
               let sentPush = 0;
               let bounced = 0;
+
               for (let notificationobj of donors) {
                 let pushToken = notificationobj.notification;
+                // Always send SMS
+                await smsService
+                  .sendMessage({
+                    phone: notificationobj.phone,
+                    message: `Hi,\nAn alert has been sent for ${units} units of *${type}* blood from *${bankName[0].name || 'Open Blood'}*, where you are registered as a donor. If available, please contact ${contact}.\n\n_You are receiving this because you're a donor at ${bankName[0].name || 'Open Blood'} and have signed up for alerts._`,
+                    footer: 'Thank you for being part of Open Blood.',
+                  })
+                  .then((res) => {
+                    sentSMS = sentSMS + 1;
+                  })
+                  .catch((err) => {
+                    bounced = bounced + 1;
+                    console.warn('Error pushing SMS: ', err);
+                  });
                 if (
-                  (await notificationService.isValidToken(pushToken)) === false
+                  (await notificationService.isValidToken(pushToken)) === true
                 ) {
-                  console.warn(
-                    `${notificationobj.phone}: Push token is not valid. Falling back to SMS.`,
-                  );
-                  let sendSMS = await smsService
-                    .send(
-                      notificationobj.phone,
-                      `${bankName[0].name} requires ${units} unit${
-                        units == 1 ? '' : 's'
-                      } of ${type} blood. Please contact ${contact} if you can donate.`,
-                    )
-                    .then((res) => {
-                      sentSMS = sentSMS + 1;
-                    })
-                    .catch((err) => {
-                      bounced = bounced + 1;
-                      console.warn('Error pushing SMS: ', err);
-                    });
-                  //continue;
-                } else {
                   messages.push({
                     to: pushToken,
                     title: `Blood Center requires ${units} unit${
                       units == 1 ? '' : 's'
                     } of ${type} blood.`,
                     body: 'Please donate if you can. Click to call.',
-                    priority: 'high',
+                    //priority: 'high',
                     data: {
                       url: `tel:+91${contact}`,
                     },
                     sound: {
-                      critical: true,
+                      // critical: true,
                       name: 'default',
                       volume: 1,
                     },
-                    interruptionLevel: 'critical',
+                    //interruptionLevel: 'critical',
                   });
                   sentPush = sentPush + 1;
-                  ws.send(
-                    `%ckpt%3%${JSON.stringify({
-                      x: sentPush,
-                      y: sentSMS,
-                      e: bounced,
-                    })}`,
-                  );
                 }
+                ws.send(
+                  `%ckpt%3%${JSON.stringify({
+                    x: sentPush,
+                    y: sentSMS,
+                    e: bounced,
+                  })}`,
+                );
               }
-              await notificationService.batch(messages);
+
+              // Send all push notifications in a batch
+              if (messages.length > 0) {
+                await notificationService.batch(messages);
+              }
+
               ws.send(
                 `%ckpt%3%${JSON.stringify({
                   x: sentPush,

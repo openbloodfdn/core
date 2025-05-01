@@ -35,10 +35,10 @@ export class HqAuthService {
               },
               {
                 //expiresIn: '1h',
-                expiresIn: '1h'
+                expiresIn: '1h',
               },
             ),
-            exp: Math.floor(Date.now() / 1000) + 60*60
+            exp: Math.floor(Date.now() / 1000) + 60 * 60,
           },
           refresh: {
             token: await this.authService.sign(

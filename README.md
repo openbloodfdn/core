@@ -1,3 +1,15 @@
+# Open Blood Core
+
+More detailed setup instructions coming whenever I decide to write docs. 
+<br /><br />
+You'll have to populate your .env file based on the `.env.example` file. Then, generate a >=64 character password to issue JWTs. You might have to rewrite `./src/services/sms/sms.service.ts` based on the messaging provider you use.
+
+## Services/Tools:
+- [Turso](turso.tech)
+- [Expo](expo.dev)
+- [Google Maps API](https://developers.google.com/maps)
+- [Gupshup](gupshup.io)
+
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>

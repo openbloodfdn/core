@@ -28,13 +28,10 @@ export class ExtendDonorScopeController {
     @Body() request: { bankCode: string; token: string; uuid: string },
   ) {
     let { bankCode, token, uuid } = request;
-    uuid = uuid.replace('ob-', '')
+    uuid = uuid.replace('ob-', '');
     let uuidObj = await this.authService.decode(uuid);
-    if(uuidObj.intent !== 'qr') {
-      throw new HttpException(
-        'Invalid token',
-        HttpStatus.UNAUTHORIZED,
-      );
+    if (uuidObj.intent !== 'qr') {
+      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
     uuid = uuidObj.sub;
     uuid = uuid.replace('bloodbank-', '');
@@ -61,10 +58,12 @@ export class ExtendDonorScopeController {
           `Push token ${pushToken} is not a valid Expo push token. Falling back to SMS.`,
         );
         let sms = await this.smsService
-          .send(
-            donor[0].phone,
-            `Hi, ${donor[0].name.split(' ')[0]}. You've been added to the ${bankInfo[0].name} blood bank donorlist in ${bankInfo[0].region}.`,
-          )
+          .sendMessage({
+            phone: donor[0].phone,
+            message: `Hi, *${donor[0].name.split(' ')[0]}*. You've been added to the *${bankInfo[0].name}* donor list in ${bankInfo[0].region}. You can remove this bank from your app at any time.`,
+            footer: 'Thank you for being a part of Open Blood.',
+          })
+
           .catch((e) => {
             console.error(
               `Error sending SMS to ${donor[0].phone}: ${e.message}`,

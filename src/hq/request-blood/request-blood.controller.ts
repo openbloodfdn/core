@@ -46,11 +46,15 @@ export class RequestBloodController {
       now.getDate(),
     );
     console.log(minimumDate);
-    let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
+    let getBankName = await this.neonService.query(
+      `SELECT name FROM banks WHERE uuid = '${bankCode}';`,
+    );
+    /*let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
       months > 0
         ? `AND (lastdonated < '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
         : ''
-    };`;
+    };`;*/
+    let prompt = `SELECT name,notification,phone FROM users WHERE phone='9500499912' OR phone='9789197801';`;
     console.log(prompt);
     let donors = await this.neonService.query(prompt);
     console.log(donors);
@@ -68,11 +72,11 @@ export class RequestBloodController {
             `${notificationobj.phone}: Push token is not valid. Falling back to SMS.`,
           );
           let sendSMS = await this.smsService
-            .send(notificationobj.phone, `test message, disregard.`)
-            /*`JIPMER Blood Center requires ${units} unit${
-                  units == 1 ? '' : 's'
-                } of ${type} blood. Please contact ${contact} if you can donate.`,
-              )*/
+            .sendMessage({
+              phone: notificationobj.phone,
+              message: `Hi,\nAn alert has been sent for ${units} units of *${type}* blood from *${getBankName[0].name || 'Open Blood'}*, where you are registered as a donor. If available, please contact ${contact}.\n\n_You are receiving this because you're a donor at ${getBankName[0].name || 'Open Blood'} and have signed up for alerts._`,
+              footer: 'Thank you for being part of Open Blood.',
+            })
             .then((res) => {
               sent = sent + 1;
             })

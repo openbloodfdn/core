@@ -36,6 +36,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-fastify": "^11.0.7",
     "@nestjs/platform-socket.io": "^11.0.9",
+    "@nestjs/throttler": "^6.4.0",
     "@nestjs/websockets": "^11.0.9",
     "@prisma/adapter-libsql": "^6.6.0",
     "@prisma/client": "^6.3.0",

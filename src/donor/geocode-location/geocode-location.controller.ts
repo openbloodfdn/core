@@ -1,10 +1,21 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { days, minutes, seconds, Throttle } from '@nestjs/throttler';
 import { PreAuthGuard } from 'src/services/auth/preauth.guard';
 import { NeonService } from 'src/services/neon/neon.service';
 @Controller('donor/geocode-location')
 export class GeocodeLocationController {
   constructor(private readonly neonService: NeonService) {}
   @UseGuards(PreAuthGuard)
+  @Throttle({
+    default: {
+      limit: 1,
+      ttl: seconds(10),
+    },
+    long: {
+      limit: 25,
+      ttl: days(14),
+    },
+  })
   @Post()
   async geocodeLocation(@Body() request: { uuid: string; address: string }) {
     let { address, uuid } = request;

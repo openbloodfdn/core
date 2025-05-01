@@ -105,6 +105,7 @@ export class SignupController {
         `DELETE from localups WHERE uuid='${request.phonenumber}';`,
       );
       console.log(insertUser);
+      
       return {
         error: false,
         message: 'Account created!',

@@ -73,12 +73,20 @@ export class BxService {
       ws.send(`%ckpt%0%${JSON.stringify({ a: 1 })}`);
 
       let now = new Date();
-      let minimumDate = new Date(now.getFullYear(), now.getMonth() - months, now.getDate());
-      let prompt = `SELECT name,notification,phone FROM users WHERE phone='9500499912';`;
+      let minimumDate = new Date(
+        now.getFullYear(),
+        now.getMonth() - months,
+        now.getDate(),
+      );
+      let prompt = `SELECT name,notification,phone FROM users WHERE scope LIKE '%"${bankCode}"%' AND bloodtype = '${type}' ${
+        months > 0
+          ? `AND (lastdonated < '${minimumDate.toISOString()}' OR lastdonated IS NULL)`
+          : ''
+      };`;
       let donors = await this.neonService.query(prompt);
 
       ws.send(`%ckpt%1%${JSON.stringify({ x: prompt.length })}`);
-      
+
       let bankName = await this.neonService.query(
         `SELECT name FROM banks WHERE uuid = '${bankCode}';`,
       );
@@ -86,14 +94,28 @@ export class BxService {
       if (donors.length === 0) {
         ws.send(`%err%No donors found in your scope.`);
       } else {
-        await this.sendNotifications(ws, donors, bankName, units, type, contact);
+        await this.sendNotifications(
+          ws,
+          donors,
+          bankName,
+          units,
+          type,
+          contact,
+        );
       }
     } else {
       ws.send(`%err%${auth.message}`);
     }
   }
 
-  private async sendNotifications(ws: any, donors: any[], bankName: any, units: number, type: string, contact: string) {
+  private async sendNotifications(
+    ws: any,
+    donors: any[],
+    bankName: any,
+    units: number,
+    type: string,
+    contact: string,
+  ) {
     let messages: ExpoPushMessage[] = [];
     let sentSMS = 0;
     let sentPush = 0;
@@ -102,7 +124,9 @@ export class BxService {
     for (let donor of donors) {
       let pushToken = donor.notification;
       if (!(await this.notificationService.isValidToken(pushToken))) {
-        console.warn(`${donor.phone}: Push token is not valid. Falling back to SMS.`);
+        console.warn(
+          `${donor.phone}: Push token is not valid. Falling back to SMS.`,
+        );
         await this.sendSMS(donor, bankName, units, type, contact);
         sentSMS++;
       } else {
@@ -121,18 +145,31 @@ export class BxService {
     );
   }
 
-  private async sendSMS(donor: any, bankName: any, units: number, type: string, contact: string) {
+  private async sendSMS(
+    donor: any,
+    bankName: any,
+    units: number,
+    type: string,
+    contact: string,
+  ) {
     try {
-      await this.smsService.send(
-        donor.phone,
-        `${bankName[0].name} requires ${units} unit${units == 1 ? '' : 's'} of ${type} blood. Please contact ${contact} if you can donate.`,
-      );
+      await this.smsService.sendMessage(
+        {
+          phone: donor.phone,
+          message: `Hi,\nAn alert has been sent for ${units} units of *${type}* blood from *${bankName[0].name || 'Open Blood'}*, where you are registered as a donor. If available, please contact ${contact}.\n\n_You are receiving this because you're a donor at ${bankName[0].name || 'Open Blood'} and have signed up for alerts._`,
+          footer: 'Thank you for being part of Open Blood.',
+        });
     } catch (err) {
       console.warn('Error sending SMS:', err);
     }
   }
 
-  private createPushMessage(donor: any, units: number, type: string, contact: string): ExpoPushMessage {
+  private createPushMessage(
+    donor: any,
+    units: number,
+    type: string,
+    contact: string,
+  ): ExpoPushMessage {
     return {
       to: donor.notification,
       title: `Blood Center requires ${units} unit${units == 1 ? '' : 's'} of ${type} blood.`,
