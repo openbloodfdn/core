@@ -1,9 +1,10 @@
 # Open Blood Core
 
-More detailed setup instructions coming whenever I decide to write docs. 
+More detailed setup instructions coming whenever I decide to write docs.
 <br /><br />
 You'll have to populate your .env file based on the `.env.example` file. Then, generate a >=64 character password to issue JWTs. You might have to rewrite `./src/services/sms/sms.service.ts` based on the messaging provider you use.
-
+<br />
+If you find any issues or have suggestions, add them to the issues tab, create a PR, or email me at [mihir@pidgon.com](mailto:mihir@pidgon.com)!
 ## Services/Tools:
 - [Turso](turso.tech)
 - [Expo](expo.dev)

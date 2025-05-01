@@ -108,16 +108,16 @@ export class SendOtpController {
       );
       if (checkIFUserExists.length === 0) {
         if (allowSignup) {
-          let otp =
+          let otp = Math.floor(1000 + Math.random() * 9000);
+          if (
             process.env.inReview === 'true' &&
             process.env.reviewNumbers &&
             process.env.reviewNumbers
               .split(',')
               .includes(normalizeToE164(phone))
-              ? 1234
-              : Math.floor(1000 + Math.random() * 9000);
-          if (inReview) {
+          ) {
             console.log('In review mode, OTP is set to 1234');
+            otp = 1234;
           } else {
             let sendOTPRecord = await this.smsService
               .sendOTPAutoOptIn(phone, otp)

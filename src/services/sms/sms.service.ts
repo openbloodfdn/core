@@ -29,11 +29,11 @@ export class SMSService {
       const number = normalizeToE164(phone);
       console.debug(`Normalized phone number: ${number}`);
 
-      if (this.getInReview() === 'true' && !this.isAllowedInReview(number)) {
-        console.log(`Review Mode: Opt-in for ${phone} blocked`);
+      if (this.getInReview() === 'true') {
+        console.log(`Review Mode: Opt-in for ${phone} skipped`);
         return {
-          error: true,
-          message: 'Opt-in not allowed because app is in review mode',
+          error: false,
+          message: 'Opt-in simulated successfully (review mode)',
         };
       }
 
@@ -65,11 +65,11 @@ export class SMSService {
       const number = normalizeToE164(phone);
       console.debug(`Normalized phone number: ${number}`);
 
-      if (this.getInReview() === 'true' && !this.isAllowedInReview(number)) {
-        console.log(`Review Mode: OTP to ${phone} blocked`);
+      if (this.getInReview() === 'true') {
+        console.log(`Review Mode: OTP to ${phone} skipped`);
         return {
-          error: true,
-          message: 'OTP not sent because app is in review mode',
+          error: false,
+          message: 'OTP simulated successfully (review mode)',
         };
       }
 
@@ -85,7 +85,7 @@ export class SMSService {
 
       const data = await response.json();
       if (data.response.status !== 'success') {
-        throw new Error(`Opt-in failed: ${data.response.message}`);
+        throw new Error(`Send OTP failed: ${data.response.message}`);
       }
       console.debug(`Send OTP response data: ${JSON.stringify(data)}`);
       return data;
@@ -98,6 +98,14 @@ export class SMSService {
   async sendOTPAutoOptIn(phone: string, otp: number) {
     console.debug(`sendOTPAutoOptIn called with phone: ${phone}, otp: ${otp}`);
     try {
+      if (this.getInReview() === 'true') {
+        console.log(`Review Mode: Auto opt-in and OTP for ${phone} skipped`);
+        return {
+          error: false,
+          message: 'Auto opt-in and OTP simulated successfully (review mode)',
+        };
+      }
+
       console.debug(`Calling optIn for phone: ${phone}`);
       await this.optIn(phone);
       console.debug(`Calling sendOTP for phone: ${phone}`);
