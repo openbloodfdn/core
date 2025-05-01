@@ -23,16 +23,29 @@ export class SendOtpController {
     private readonly authService: AuthService,
   ) {}
 
-  @Throttle({
-    default: {
-      limit: 6,
-      ttl: minutes(5),
-    },
-    long: {
-      limit: 6,
-      ttl: days(1),
-    },
-  })
+  @Throttle(
+    process.env.inReview === 'true'
+      ? {
+          default: {
+            limit: 0,
+            ttl: minutes(5),
+          },
+          long: {
+            limit: 0,
+            ttl: days(1),
+          },
+        }
+      : {
+          default: {
+            limit: 7,
+            ttl: minutes(5),
+          },
+          long: {
+            limit: 14,
+            ttl: days(1),
+          },
+        },
+  )
   @Post()
   async sendOTP(
     @Body()
