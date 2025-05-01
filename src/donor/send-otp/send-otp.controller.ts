@@ -29,7 +29,7 @@ export class SendOtpController {
       ttl: minutes(5),
     },
     long: {
-      limit: 16,
+      limit: 6,
       ttl: days(1),
     },
   })
