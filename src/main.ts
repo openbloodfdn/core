@@ -16,7 +16,9 @@ import { HqAuthService } from './services/hq-auth/hq-auth.service';
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter(),
+    new FastifyAdapter({
+      trustProxy: true,
+    }),
   );
   const server = app.getHttpServer();
   const wss = new Server({ noServer: true });
