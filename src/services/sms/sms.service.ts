@@ -73,6 +73,14 @@ export class SMSService {
         };
       }
 
+      if(number === '911234567890' || number === '919876543210') {
+        console.log(`Review Mode: OTP to ${phone} skipped`);
+        return {
+          error: false,
+          message: 'OTP simulated successfully (review mode)',
+        };
+      }
+
       const url = `https://mediaapi.smsgupshup.com/GatewayAPI/rest?userid=${this.getUserID()}&password=${this.getPassword()}&send_to=${number}&v=1.1&format=json&msg_type=TEXT&method=SENDMESSAGE&msg=${otp}+is+your+verification+code.+For+your+security%2C+do+not+share+this+code.&isTemplate=true`;
       console.debug(`Send OTP URL: ${url}`);
 
