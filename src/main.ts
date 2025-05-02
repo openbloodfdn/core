@@ -1,7 +1,6 @@
 import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import querystring from 'querystring';
 import {
   FastifyAdapter,
   NestFastifyApplication,

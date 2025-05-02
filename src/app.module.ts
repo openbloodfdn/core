@@ -59,13 +59,8 @@ import {
         {
           name: 'default',
           ttl: seconds(1),
-          limit: 0, 
-        },
-        {
-          name: 'long',
-          ttl: minutes(1),
-          limit: 0,
-        },
+          limit: 5, 
+        }
       ],
     }),
     SendOtpModule,
