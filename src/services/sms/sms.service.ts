@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import * as querystring from 'querystring';
 //import { Twilio } from 'twilio';
 import { ConfigService } from '@nestjs/config';
+import { NeonService } from '../neon/neon.service';
 const baseUrl = 'https://mediaapi.smsgupshup.com/GatewayAPI/rest';
 @Injectable()
 export class SMSService {
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private readonly neonService: NeonService,
+  ) {}
 
   getUserID(): string {
     return this.configService.get<string>('smsUserID') ?? '';
@@ -69,15 +73,18 @@ export class SMSService {
         console.log(`Review Mode: OTP to ${phone} skipped`);
         return {
           error: false,
-          message: 'OTP simulated successfully (review mode)',
+          message: 'simulated OTP (review mode)',
         };
       }
 
-      if(number === '911234567890' || number === '919876543210') {
-        console.log(`Review Mode: OTP to ${phone} skipped`);
+      if (
+        this.getReviewNumbers() &&
+        this.getReviewNumbers().split(',').includes(normalizeToE164(phone))
+      ) {
+        console.log(`Review Number: OTP to ${phone} skipped`);
         return {
           error: false,
-          message: 'OTP simulated successfully (review mode)',
+          message: 'simulated OTP (review mode)',
         };
       }
 
@@ -94,6 +101,10 @@ export class SMSService {
       const data = await response.json();
       if (data.response.status !== 'success') {
         throw new Error(`Send OTP failed: ${data.response.message}`);
+      } else {
+        await this.neonService.query(
+          `UPDATE admin set value = value + 1 WHERE key = 'sms'`,
+        );
       }
       console.debug(`Send OTP response data: ${JSON.stringify(data)}`);
       return data;
@@ -155,6 +166,10 @@ export class SMSService {
       const data = await response.json();
       if (data.response.status !== 'success') {
         throw new Error(`Opt-in failed: ${data.response.message}`);
+      } else {
+        await this.neonService.query(
+          `UPDATE admin set value = value + 1 WHERE key = 'sms'`,
+        );
       }
       console.debug(`Send Message response data: ${JSON.stringify(data)}`);
       return data;

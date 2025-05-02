@@ -11,6 +11,7 @@ import { NeonService } from './services/neon/neon.service';
 import { NotificationService } from './services/notification/notification.service';
 import { SMSService } from './services/sms/sms.service';
 import { HqAuthService } from './services/hq-auth/hq-auth.service';
+import { EmailService } from './services/email/email.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -25,7 +26,7 @@ async function bootstrap() {
   let notificationService = app.get(NotificationService);
   let smsService = app.get(SMSService);
   let hqAuthService = app.get(HqAuthService);
-
+  let emailService = app.get(EmailService);
   server.on('upgrade', (request, socket, head) => {
     if (request.url === '/bx') {
       wss.handleUpgrade(request, socket, head, (ws) => {
@@ -39,6 +40,9 @@ async function bootstrap() {
   wss.on('connection', (ws) => {
     console.log('Client connected to WebSocket');
 
+    let sentSMS = 0;
+    let sentPush = 0;
+    let bounced = 0;
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message.toString());
@@ -93,9 +97,6 @@ async function bootstrap() {
               ws.send(`%err%No donors found in your scope.`);
             } else {
               let messages: ExpoPushMessage[] = [];
-              let sentSMS = 0;
-              let sentPush = 0;
-              let bounced = 0;
 
               for (let notificationobj of donors) {
                 let pushToken = notificationobj.notification;
@@ -164,6 +165,10 @@ async function bootstrap() {
           console.error('Invalid message received:', data);
         }
         console.log('Process completed.');
+        await emailService.send(
+          `BX Alert to ${prompt.length} ${data.bankCode} donors`,
+          `BX Alert sent for ${data.bankCode}. Sent for ${data.units} units of ${data.type} blood, contact ${data.contact}. \n Stats: \n Sent Push: ${sentPush}, Sent SMS: ${sentSMS}, Bounced: ${bounced}`,
+        );
       } catch (error) {
         console.error('Invalid message received:', error);
       }

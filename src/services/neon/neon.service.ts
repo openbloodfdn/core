@@ -27,6 +27,14 @@ export class NeonService {
     });
   }
   private readonly converters: { [key: string]: Converter } = {
+    key: {
+      convert: (val: string) => val,
+      default: '',
+    },
+    value: {
+      convert: (val: string) => val,
+      default: '',
+    },
     id: {
       convert: (val: any) => parseInt(val),
       default: null,
@@ -76,7 +84,7 @@ export class NeonService {
       default: '',
     },
     verified: {
-      convert: (val: number) => val == 1 || val == 0 ? val == 1 : val,
+      convert: (val: number) => (val == 1 || val == 0 ? val == 1 : val),
       default: false,
     },
     log: {
@@ -128,7 +136,7 @@ export class NeonService {
       default: [],
     },
     installed: {
-      convert: (val: number) => val == 1 || val == 0 ? val == 1 : val,
+      convert: (val: number) => (val == 1 || val == 0 ? val == 1 : val),
       default: false,
     },
     coords: {

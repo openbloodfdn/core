@@ -41,12 +41,9 @@ import { HQRefreshModule } from './hq/refresh/refresh.module';
 import { BxService } from './services/bx/bx.service';
 import { QRModule } from './donor/qr/qr.module';
 import { CheckOtpModule } from './donor/check-otp/check-otp.module';
-import {
-  minutes,
-  seconds,
-  ThrottlerGuard,
-  ThrottlerModule,
-} from '@nestjs/throttler';
+import { seconds, ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { EmailService } from './services/email/email.service';
+import { SmsreportModule } from './admin/smsreport/smsreport.module';
 
 @Module({
   imports: [
@@ -59,8 +56,8 @@ import {
         {
           name: 'default',
           ttl: seconds(1),
-          limit: 5, 
-        }
+          limit: 5,
+        },
       ],
     }),
     SendOtpModule,
@@ -91,6 +88,7 @@ import {
     HQRefreshModule,
     QRModule,
     CheckOtpModule,
+    SmsreportModule,
   ],
   controllers: [AppController],
   providers: [
@@ -112,6 +110,7 @@ import {
     HqAuthService,
     AuthService,
     BxService,
+    EmailService,
   ],
 })
 export class AppModule {}

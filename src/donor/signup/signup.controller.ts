@@ -1,12 +1,14 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import * as shortid from 'shortid';
 import { AuthService } from 'src/services/auth/auth.service';
+import { EmailService } from 'src/services/email/email.service';
 import { NeonService } from 'src/services/neon/neon.service';
 @Controller('donor/signup')
 export class SignupController {
   constructor(
     private readonly neonService: NeonService,
     private readonly authService: AuthService,
+    private readonly emailService: EmailService
   ) {}
 
   @Post()
@@ -105,7 +107,10 @@ export class SignupController {
         `DELETE from localups WHERE uuid='${request.phonenumber}';`,
       );
       console.log(insertUser);
-      
+      this.emailService.send(
+        `Signup! ${insertUser[0].name} <${request.phonenumber}>`,
+        `New signup for ${request.scope}! thank you ${insertUser[0].name}, very cool`,
+      )
       return {
         error: false,
         message: 'Account created!',
