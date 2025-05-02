@@ -63,15 +63,15 @@ export class VerifyDonorController {
           `UPDATE banks SET verified = verified + 1 WHERE uuid = '${bankCode}';`,
         );
       }
-      let getLog = await this.neonService.query(`
-          SELECT log FROM users WHERE uuid = '${uuid}';`);
+      let getLog = await this.neonService.query(`SELECT log FROM users WHERE uuid = '${uuid}';`);
       let log = getLog[0].log;
       log.push({
         x: `v-${bloodtype}`,
         y: new Date().toISOString(),
       });
-      let updatedLog = await this.neonService.query(
-        `UPDATE users SET log ='${JSON.stringify(log).replace(/'/g, "''")}' WHERE uuid = '${uuid}';`,
+      let updatedLog = await this.neonService.execute(
+        `UPDATE users SET log = $1 WHERE uuid = $2;`,
+        [JSON.stringify(log), uuid],
       );
       if (conditions.trim() != '') {
         let updatedConditions = await this.neonService.query(
@@ -110,7 +110,10 @@ export class VerifyDonorController {
             footer: 'Thank you for being a part of Open Blood.',
           })
           .catch((err) => {
-            return { error: true, message: 'Error sending verification SMS' };
+            return {
+              error: true,
+              message: 'Error sending verification message',
+            };
           });
       }
       return { error: false, message: 'Records updated' };

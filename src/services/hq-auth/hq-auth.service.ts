@@ -11,6 +11,9 @@ export class HqAuthService {
   ) {}
   async login(bankCode: string, token: string) {
     try {
+      if (bankCode.trim() === '' || token.trim() === '') {
+        return { error: true, message: 'Bank code or token is empty.' };
+      }
       console.log(bankCode, token);
       token = token.replace('hq-', '');
       console.log(bankCode, token);
