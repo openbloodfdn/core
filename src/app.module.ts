@@ -59,12 +59,12 @@ import {
         {
           name: 'default',
           ttl: seconds(1),
-          limit: 5,
+          limit: 0, 
         },
         {
           name: 'long',
           ttl: minutes(1),
-          limit: 100, // 100 requests per minute
+          limit: 0,
         },
       ],
     }),

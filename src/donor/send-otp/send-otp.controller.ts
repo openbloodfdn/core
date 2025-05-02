@@ -1,15 +1,17 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { OTPService } from 'src/services/otp/otp.service';
 import { NeonService } from 'src/services/neon/neon.service';
 import { SMSService } from 'src/services/sms/sms.service';
 import { AuthService } from 'src/services/auth/auth.service';
 import { Throttle, days, minutes } from '@nestjs/throttler';
+import { OtpthrottleGuard } from 'src/services/otpthrottle/otpthrottle.guard';
 
 const inReview = process.env.inReview === 'true';
 const reviewNumbers = process.env.reviewNumbers
   ? process.env.reviewNumbers.split(',')
   : [];
 @Controller('donor/send-otp')
+@UseGuards(OtpthrottleGuard)
 export class SendOtpController {
   /**
    * @params {string} phone
