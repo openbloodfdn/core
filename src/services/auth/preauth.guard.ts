@@ -26,7 +26,7 @@ export class PreAuthGuard implements CanActivate {
       request.body.uuid = payload.sub;
       request.body.realotp = payload.otp ?? '';
       request.body.intent = payload.intent;
-      if (payload.intent !== 'p' && payload.intent !== 'n') {
+      if (payload.intent !== 'p-n' && payload.intent !== 'p-e' && payload.intent !== 'n') {
         throw new UnauthorizedException();
       }
     } catch {
