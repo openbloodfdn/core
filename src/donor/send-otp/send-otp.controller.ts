@@ -22,24 +22,12 @@ export class SendOtpController {
   @Throttle(
     process.env.inReview === 'true'
       ? {
-          default: {
-            limit: 0,
-            ttl: minutes(5),
-          },
-          long: {
-            limit: 0,
-            ttl: days(1),
-          },
+          default: { limit: 0, ttl: minutes(5) },
+          long: { limit: 0, ttl: days(1) },
         }
       : {
-          default: {
-            limit: 4,
-            ttl: minutes(5),
-          },
-          long: {
-            limit: 8,
-            ttl: days(1),
-          },
+          default: { limit: 4, ttl: minutes(5) },
+          long: { limit: 8, ttl: days(1) },
         },
   )
   @Post()
@@ -47,65 +35,51 @@ export class SendOtpController {
     @Body()
     body: {
       phone: string;
-      allowSignup: boolean;
-      intentVerifyOTPlogin: boolean;
-      userEnteredOTP: string;
+      allowSignup?: boolean;
+      intentVerifyOTPlogin?: boolean;
+      userEnteredOTP?: string;
     },
   ) {
-    let { phone, allowSignup, intentVerifyOTPlogin, userEnteredOTP } = body;
+    let { phone } = body;
     phone = phone.replace(/\s/g, '');
     phone = phone.replace('+91', '');
-    if (intentVerifyOTPlogin) {
+    if (body.intentVerifyOTPlogin) {
       let checkIFUserExists = await this.neonService.query(
         `SELECT phone,otp,uuid,scope FROM users WHERE phone = '${phone}';`,
       );
       if (checkIFUserExists.length === 0) {
         return { error: true, message: 'User not found' };
       } else {
-        console.log(checkIFUserExists[0].otp, userEnteredOTP);
-        if (parseInt(checkIFUserExists[0].otp) === parseInt(userEnteredOTP)) {
+        console.log(checkIFUserExists[0].otp, body.userEnteredOTP);
+        if (
+          parseInt(checkIFUserExists[0].otp) ===
+          parseInt(body.userEnteredOTP ?? '')
+        ) {
           console.log('DEBUG');
           console.log(
             await this.authService.sign(
-              {
-                sub: checkIFUserExists[0].uuid,
-                intent: 'r',
-              },
-              {
-                expiresIn: '30d',
-              },
+              { sub: checkIFUserExists[0].uuid, intent: 'r' },
+              { expiresIn: '30d' },
             ),
           );
           return {
             access: {
               token: await this.authService.sign(
-                {
-                  sub: checkIFUserExists[0].uuid,
-                  intent: 'n',
-                },
-                {
-                  expiresIn: '1h',
-                },
+                { sub: checkIFUserExists[0].uuid, intent: 'n' },
+                { expiresIn: '1h' },
               ),
               exp: Math.floor(Date.now() / 1000) + 60 * 60,
             },
             refresh: {
               token: await this.authService.sign(
-                {
-                  sub: checkIFUserExists[0].uuid,
-                  intent: 'r',
-                },
-                {
-                  expiresIn: '30d',
-                },
+                { sub: checkIFUserExists[0].uuid, intent: 'r' },
+                { expiresIn: '30d' },
               ),
               exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30,
             },
             error: false,
             message: 'OTP verified',
-            bank: {
-              id: checkIFUserExists[0].scope[0],
-            },
+            bank: { id: checkIFUserExists[0].scope[0] },
           };
         } else {
           return { error: true, message: 'OTP incorrect' };
@@ -116,46 +90,32 @@ export class SendOtpController {
         `SELECT uuid FROM users WHERE phone = '${phone}';`,
       );
       if (checkIFUserExists.length === 0) {
-        if (allowSignup) {
-          let otp = Math.floor(1000 + Math.random() * 9000);
-          if (
-            process.env.reviewNumbers &&
-            process.env.reviewNumbers
-              .split(',')
-              .includes(normalizeToE164(phone))
-          ) {
-            console.log('In review mode, OTP is set to 1234');
-            otp = 1234;
-          } else {
-            let sendOTPRecord = await this.smsService
-              .sendOTPAutoOptIn(phone, otp)
-              .catch((err) => {
-                return {
-                  error: true,
-                  message: 'Error sending OTP',
-                };
-              });
-            if (sendOTPRecord && 'sid' in sendOTPRecord) {
-              console.log(sendOTPRecord.sid);
-            }
-          }
-          console.log(phone, otp);
-          return {
-            error: false,
-            lookuptoken: await this.authService.sign(
-              {
-                sub: phone,
-                otp: otp,
-                intent: 'p',
-              },
-              {
-                expiresIn: '2h',
-              },
-            ),
-          };
+        let otp = Math.floor(1000 + Math.random() * 9000);
+        if (
+          process.env.reviewNumbers &&
+          process.env.reviewNumbers.split(',').includes(normalizeToE164(phone))
+        ) {
+          console.log('In review mode, OTP is set to 1234');
+          otp = 1234;
         } else {
-          return { error: true, message: 'User not found' };
+          console.log(`otp is ${otp}`);
+          let sendOTPRecord = await this.smsService
+            .sendOTPAutoOptIn(phone, otp)
+            .catch((err) => {
+              return { error: true, message: 'Error sending OTP' };
+            });
+          if (sendOTPRecord && 'sid' in sendOTPRecord) {
+            console.log(sendOTPRecord.sid);
+          }
         }
+        console.log(phone, otp);
+        return {
+          error: false,
+          lookuptoken: await this.authService.sign(
+            { sub: phone, otp: otp, intent: 'p-n' },
+            { expiresIn: '2h' },
+          ),
+        };
       } else {
         console.log('User exists');
         console.log(phone);
@@ -166,22 +126,20 @@ export class SendOtpController {
         ) {
           otp = 1234;
         } else {
+          console.log(`otp is ${otp}`);
           let sendOTPRecord = await this.smsService
             .sendOTPAutoOptIn(phone, otp)
             .catch((err) => {
-              return {
-                error: true,
-                message: 'Error sending OTP',
-              };
+              return { error: true, message: 'Error sending OTP' };
             });
         }
-        let setOTPRecord = this.neonService.query(
-          `UPDATE users SET otp = '${otp}' WHERE phone = '${phone}';`,
-        );
         return {
           error: false,
           message: 'OTP sent',
-          otpSent: true,
+          lookuptoken: await this.authService.sign(
+            { sub: checkIFUserExists[0].uuid, otp: otp, intent: 'p-e' },
+            { expiresIn: '2h' },
+          ),
         };
       }
     }
